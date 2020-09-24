@@ -1,15 +1,19 @@
 #include "MainFrame.hpp"
+#include <cstring>
 #include <algorithm>
 #include <atomic>
 #include "util/system.h"
 #include "util/timer.h"
 #include "util/file_system.h"
-#include "mve/view.h"
 #include "Image.hpp"
 
-
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
-                     const wxSize &size) : wxFrame(parent, id, title, pos, size) {
+                     const wxSize &size) : wxFrame(parent, id, title, pos, size),
+                                           m_pImageList(nullptr) {
+    wxInitAllImageHandlers();
+    m_pImageListCtrl = new wxListCtrl(this);
+    m_pImageList = new wxImageList(128, 128, false);
+    m_pImageListCtrl->SetImageList(m_pImageList, wxIMAGE_LIST_NORMAL);
     m_pMenuBar = new wxMenuBar();
 
     auto *pFileMenu = new wxMenu();
@@ -57,6 +61,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         std::sort(dir.begin(), dir.end());
         std::atomic_int id_cnt(0);
         std::atomic_int num_imported(0);
+        m_views.clear();
 #pragma omp parallel for ordered schedule(dynamic, 1)
         for (std::size_t i = 0; i < dir.size(); ++i) {
             if (dir[i].is_dir) {
@@ -98,9 +103,33 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             std::cout << "Importing image: " << fname
                       << ", writing MVE view: " << mve_fname << "..." << std::endl;
             view->save_view_as(util::fs::join_path(outputDir, mve_fname));
+            m_views.push_back(view);
         }
         std::cout << "Imported " << num_imported << " input images, took "
                   << timer.get_elapsed() << " ms." << std::endl;
+
+        SetImageList("original", "ID");
+    }
+}
+
+void MainFrame::SetImageList(const std::string &name, const std::string &label) {
+    if (m_views.empty()) {
+        return;
+    }
+    m_pImageListCtrl->DeleteAllItems();
+    for (std::size_t i = 0; i < m_views.size(); ++i)
+    {
+        mve::ByteImage::Ptr image= m_views[i]->get_byte_image(name);
+        wxImage icon(image->width(), image->height());
+        memcpy(icon.GetData(), image->get_data_pointer(), image->get_byte_size());
+        int width = 0;
+        int height = 0;
+        m_pImageList->GetSize(i, width, height);
+        icon.Rescale(width, height);
+        if (!m_pImageList->Replace(i, icon)) {
+            m_pImageList->Add(icon);
+        }
+        m_pImageListCtrl->InsertItem(i, wxString::Format("%s %lld", label, i), i);
     }
 }
 

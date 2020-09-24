@@ -3,6 +3,7 @@
 
 #include "mve/image.h"
 #include "mve/view.h"
+#define THUMBNAIL_SIZE 50
 
 template<class T>
 typename mve::Image<T>::Ptr limit_image_size(typename mve::Image<T>::Ptr img, int max_pixels);
@@ -24,5 +25,10 @@ mve::ImageBase::Ptr load_any_image(std::string const &fname, std::string *exif);
 void add_exif_to_view(mve::View::Ptr view, std::string const &exif);
 
 std::string make_image_name(int id);
+
+template <typename T>
+void find_min_max_percentile (typename mve::Image<T>::ConstPtr image, T* vmin, T* vmax);
+
+mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img);
 
 #endif //_IMAGE_HPP

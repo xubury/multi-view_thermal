@@ -129,3 +129,52 @@ add_exif_to_view(mve::View::Ptr view, std::string const &exif) {
 std::string make_image_name(int id) {
     return "view_" + util::string::get_filled(id, 4) + ".mve";
 }
+
+template <typename T>
+void find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
+                         T* vmin, T* vmax)
+{
+    typename mve::Image<T>::Ptr copy = mve::Image<T>::create(*image);
+    std::sort(copy->begin(), copy->end());
+    *vmin = copy->at(copy->get_value_amount() / 10);
+    *vmax = copy->at(9 * copy->get_value_amount() / 10);
+}
+
+mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
+    mve::ByteImage::Ptr image;
+    switch (img->get_type())
+    {
+        case mve::IMAGE_TYPE_UINT8:
+            image = mve::image::create_thumbnail<uint8_t>
+                    (std::dynamic_pointer_cast<mve::ByteImage const>(img),
+                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            break;
+
+        case mve::IMAGE_TYPE_UINT16:
+        {
+            mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
+                    (std::dynamic_pointer_cast<mve::RawImage const>(img),
+                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            uint16_t vmin, vmax;
+            find_min_max_percentile(temp, &vmin, &vmax);
+            image = mve::image::raw_to_byte_image(temp, vmin, vmax);
+            break;
+        }
+
+        case mve::IMAGE_TYPE_FLOAT:
+        {
+            mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
+                    (std::dynamic_pointer_cast<mve::FloatImage const>(img),
+                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+            float vmin, vmax;
+            find_min_max_percentile(temp, &vmin, &vmax);
+            image = mve::image::float_to_byte_image(temp, vmin, vmax);
+            break;
+        }
+
+        default:
+            return mve::ByteImage::Ptr();
+    }
+
+    return image;
+}
