@@ -19,6 +19,10 @@ public:
          MENU_SCENE_OPEN
      };
 private:
+    void OnMenuOpenScene(wxCommandEvent &event);
+
+    void OnMenuNewScene(wxCommandEvent &event);
+
     wxMenuBar *m_pMenuBar;
 };
 
