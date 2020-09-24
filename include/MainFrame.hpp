@@ -2,8 +2,11 @@
 #define _MAIN_FRAME_HPP
 
 #ifndef WX_PRECOMP
+
 #include <wx/wxprec.h>
+
 #endif
+
 #include <wx/listctrl.h>
 #include <vector>
 #include "mve/view.h"

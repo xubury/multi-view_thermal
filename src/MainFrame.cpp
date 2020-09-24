@@ -117,9 +117,8 @@ void MainFrame::SetImageList(const std::string &name, const std::string &label) 
         return;
     }
     m_pImageListCtrl->DeleteAllItems();
-    for (std::size_t i = 0; i < m_views.size(); ++i)
-    {
-        mve::ByteImage::Ptr image= m_views[i]->get_byte_image(name);
+    for (std::size_t i = 0; i < m_views.size(); ++i) {
+        mve::ByteImage::Ptr image = m_views[i]->get_byte_image(name);
         wxImage icon(image->width(), image->height());
         memcpy(icon.GetData(), image->get_data_pointer(), image->get_byte_size());
         int width = 0;
