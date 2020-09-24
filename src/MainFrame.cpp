@@ -42,7 +42,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         util::fs::Directory dir;
 
         std::string aPath = dlg.GetPath().ToStdString();
-        std::string outputDir =  aPath + "/scene";
+        std::string outputDir = aPath + "/scene";
         util::fs::mkdir(outputDir.c_str());
 
         try {
@@ -74,8 +74,8 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
                 continue;
             int id;
 #pragma omp ordered
-            id = id_cnt ++;
-            ++ num_imported;
+            id = id_cnt++;
+            ++num_imported;
 
             /* Create view, set headers, add image. */
             mve::View::Ptr view = mve::View::create();
@@ -100,7 +100,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             view->save_view_as(util::fs::join_path(outputDir, mve_fname));
         }
         std::cout << "Imported " << num_imported << " input images, took "
-        << timer.get_elapsed() << " ms." << std::endl;
+                  << timer.get_elapsed() << " ms." << std::endl;
     }
 }
 
