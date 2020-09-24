@@ -12,7 +12,7 @@ find_package(glbinding REQUIRED)
 
 add_subdirectory(elibs)
 
-add_executable(multi_view src/MainApp.cpp include/MainApp.hpp)
+add_executable(multi_view src/MainApp.cpp include/MainApp.hpp src/MainFrame.cpp include/MainFrame.hpp)
 
 add_dependencies(multi_view ext_mve)
 
