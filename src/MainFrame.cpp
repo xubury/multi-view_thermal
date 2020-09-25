@@ -46,7 +46,8 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             m_pScene = mve::Scene::create(aPath);
         } catch (const std::exception &e) {
             std::cout << "Error Loading Scene: " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+            event.Skip();
+            return;
         }
     }
     event.Skip();
@@ -72,7 +73,8 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             dir.scan(aPath);
         } catch (std::exception &e) {
             std::cerr << "Error scanning input dir: " << e.what() << std::endl;
-            std::exit(EXIT_FAILURE);
+            event.Skip();
+            return;
         }
         std::cout << "Found " << dir.size() << " directory entries" << std::endl;
 
@@ -159,7 +161,8 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        features_and_matching(m_pScene, &viewPorts, &pairwise_matching);
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching))
+            return; // no feature match
 
         std::cout << "Saving pre-bundle to file..." << std::endl;
         sfm::bundler::save_prebundle_to_file(
@@ -176,8 +179,8 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
 
     /* Check if there are some matching images. */
     if (pairwise_matching.empty()) {
-        std::cerr << "No matching image pairs. Exiting." << std::endl;
-        std::exit(EXIT_FAILURE);
+        std::cerr << "No matching image pairs." << std::endl;
+        return;
     }
 
     /* Load camera intrinsics. */

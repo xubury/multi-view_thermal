@@ -181,9 +181,10 @@ mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
 
     return image;
 }
-void features_and_matching (mve::Scene::Ptr scene,
-                            sfm::bundler::ViewportList* viewports,
-                            sfm::bundler::PairwiseMatching* pairwise_matching) {
+
+bool features_and_matching(mve::Scene::Ptr scene,
+                           sfm::bundler::ViewportList *viewports,
+                           sfm::bundler::PairwiseMatching *pairwise_matching) {
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = ORIGINAL_IMAGE_NAME;
     feature_opts.max_image_size = MAX_IMAGE_SIZE;
@@ -218,7 +219,9 @@ void features_and_matching (mve::Scene::Ptr scene,
 
     if (pairwise_matching->empty())
     {
-        std::cerr << "Error: No matching image pairs. Exiting." << std::endl;
-        std::exit(EXIT_FAILURE);
+        std::cerr << "Error: No matching image pairs." << std::endl;
+        return false;
+    } else {
+        return true;
     }
 }
