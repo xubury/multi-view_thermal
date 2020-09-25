@@ -3,6 +3,9 @@
 #include "mve/image_io.h"
 #include "mve/image_exif.h"
 #include "util/file_system.h"
+#include "sfm/bundler_features.h"
+#include "sfm/bundler_matching.h"
+#include "util/timer.h"
 
 template<class T>
 typename mve::Image<T>::Ptr
@@ -177,4 +180,45 @@ mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
     }
 
     return image;
+}
+void features_and_matching (mve::Scene::Ptr scene,
+                            sfm::bundler::ViewportList* viewports,
+                            sfm::bundler::PairwiseMatching* pairwise_matching) {
+    sfm::bundler::Features::Options feature_opts;
+    feature_opts.image_embedding = ORIGINAL_IMAGE_NAME;
+    feature_opts.max_image_size = MAX_IMAGE_SIZE;
+    feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
+
+    std::cout << "Computing image feature..." << std::endl;
+    {
+        util::WallTimer timer;
+        sfm::bundler::Features bundler_features(feature_opts);
+        bundler_features.compute(scene, viewports);
+
+        std::cout << "Computing features took " << timer.get_elapsed()
+                  << " ms." << std::endl;
+    }
+    /* Exhaustive matching between all pairs of views. */
+    sfm::bundler::Matching::Options matching_opts;
+    //matching_opts.ransac_opts.max_iterations = 1000;
+    //matching_opts.ransac_opts.threshold = 0.0015;
+    matching_opts.ransac_opts.verbose_output = false;
+    matching_opts.use_lowres_matching = false;
+    matching_opts.matcher_type = sfm::bundler::Matching::MATCHER_EXHAUSTIVE;
+
+    std::cout << "Performing feature matching..." << std::endl;
+    {
+        util::WallTimer timer;
+        sfm::bundler::Matching bundler_matching(matching_opts);
+        bundler_matching.init(viewports);
+        bundler_matching.compute(pairwise_matching);
+        std::cout << "Matching took " << timer.get_elapsed()
+                  << " ms." << std::endl;
+    }
+
+    if (pairwise_matching->empty())
+    {
+        std::cerr << "Error: No matching image pairs. Exiting." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
 }

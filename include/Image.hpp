@@ -3,8 +3,13 @@
 
 #include "mve/image.h"
 #include "mve/view.h"
+#include "mve/scene.h"
+#include "sfm/bundler_common.h"
 
 #define THUMBNAIL_SIZE 50
+#define RAND_SEED_MATCHING 0
+#define MAX_IMAGE_SIZE 6000000
+#define ORIGINAL_IMAGE_NAME "original"
 
 template<class T>
 typename mve::Image<T>::Ptr limit_image_size(typename mve::Image<T>::Ptr img, int max_pixels);
@@ -31,5 +36,9 @@ template<typename T>
 void find_min_max_percentile(typename mve::Image<T>::ConstPtr image, T *vmin, T *vmax);
 
 mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img);
+
+void features_and_matching (mve::Scene::Ptr scene,
+                       sfm::bundler::ViewportList* viewports,
+                       sfm::bundler::PairwiseMatching* pairwise_matching);
 
 #endif //_IMAGE_HPP

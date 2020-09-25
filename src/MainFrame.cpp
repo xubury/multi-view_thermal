@@ -157,7 +157,13 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     sfm::bundler::ViewportList viewPorts;
     sfm::bundler::PairwiseMatching pairwise_matching;
     if (!util::fs::file_exists(prebundle_path.c_str())) {
-        // do pairwise
+        std::cout << "Start feature matching." << std::endl;
+        util::system::rand_seed(RAND_SEED_MATCHING);
+        features_and_matching(m_pScene, &viewPorts, &pairwise_matching);
+
+        std::cout << "Saving pre-bundle to file..." << std::endl;
+        sfm::bundler::save_prebundle_to_file(
+                viewPorts, pairwise_matching, prebundle_path);
     } else {
         std::cout << "Loading pairwise matching from file..." << std::endl;
         sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
