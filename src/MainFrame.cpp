@@ -5,7 +5,7 @@
 #include "util/system.h"
 #include "util/timer.h"
 #include "util/file_system.h"
-#include "mve/scene.h"
+#include "sfm/feature_set.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_intrinsics.h"
 #include "Image.hpp"
@@ -22,12 +22,14 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pFileMenu = new wxMenu();
     pFileMenu->Append(MENU::MENU_SCENE_OPEN, _("Open Scene"));
     pFileMenu->Append(MENU::MENU_SCENE_NEW, _("New Scene"));
+    pFileMenu->Append(MENU::MENU_DO_SFM, _("Do Sfm"));
 
     m_pMenuBar->Append(pFileMenu, _("File"));
     this->SetMenuBar(m_pMenuBar);
 
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuOpenScene, this, MENU::MENU_SCENE_OPEN);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuNewScene, this, MENU::MENU_SCENE_NEW);
+    pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
 
     util::system::register_segfault_handler();
 }
@@ -40,41 +42,12 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
         std::string aPath = dlg.GetPath().ToStdString();
         aPath = util::fs::sanitize_path(aPath);
 
-        mve::Scene::Ptr scene;
         try {
-            scene = mve::Scene::create(aPath);
+            m_pScene = mve::Scene::create(aPath);
         } catch (const std::exception &e) {
             std::cout << "Error Loading Scene: " << e.what() << std::endl;
             std::exit(EXIT_FAILURE);
         }
-        std::cout << "View Size: " << scene->get_views().size() << std::endl;
-
-        const std::string prebundle_path = util::fs::join_path(scene->get_path(), "prebundle.sfm");
-        sfm::bundler::ViewportList viewPorts;
-        sfm::bundler::PairwiseMatching pairwise_matching;
-        if (!util::fs::file_exists(prebundle_path.c_str())) {
-
-        } else {
-            std::cout << "Loading pairwise matching from file..." << std::endl;
-            sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
-        }
-
-        /* Drop descriptors and embeddings to save memory. */
-        scene->cache_cleanup();
-        for (auto & viewPort : viewPorts)
-            viewPort.features.clear_descriptors();
-
-        /* Check if there are some matching images. */
-        if (pairwise_matching.empty()) {
-            std::cerr << "No matching image pairs. Exiting." << std::endl;
-            std::exit(EXIT_FAILURE);
-        }
-
-        /* Load camera intrinsics. */
-        sfm::bundler::Intrinsics::Options intrinsics_opts;
-        std::cout << "Initializing camera intrinsics..." << std::endl;
-        sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
-        intrinsics.compute(scene, &viewPorts);
     }
     event.Skip();
 }
@@ -107,7 +80,6 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         std::sort(dir.begin(), dir.end());
         std::atomic_int id_cnt(0);
         std::atomic_int num_imported(0);
-        m_views.clear();
 #pragma omp parallel for ordered schedule(dynamic, 1)
         for (std::size_t i = 0; i < dir.size(); ++i) {
             if (dir[i].is_dir) {
@@ -149,23 +121,24 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             std::cout << "Importing image: " << fname
                       << ", writing MVE view: " << mve_fname << "..." << std::endl;
             view->save_view_as(util::fs::join_path(viewsPath, mve_fname));
-            m_views.push_back(view);
         }
         std::cout << "Imported " << num_imported << " input images, took "
                   << timer.get_elapsed() << " ms." << std::endl;
 
+        m_pScene = mve::Scene::create(scenePath);
         SetImageList("original", "ID");
     }
     event.Skip();
 }
 
 void MainFrame::SetImageList(const std::string &name, const std::string &label) {
-    if (m_views.empty()) {
+    mve::Scene::ViewList& views = m_pScene->get_views();
+    if (views.empty()) {
         return;
     }
     m_pImageListCtrl->DeleteAllItems();
-    for (std::size_t i = 0; i < m_views.size(); ++i) {
-        mve::ByteImage::Ptr image = m_views[i]->get_byte_image(name);
+    for (std::size_t i = 0; i < views.size(); ++i) {
+        mve::ByteImage::Ptr image = views[i]->get_byte_image(name);
         wxImage icon(image->width(), image->height());
         memcpy(icon.GetData(), image->get_data_pointer(), image->get_byte_size());
         int width = 0;
@@ -177,5 +150,35 @@ void MainFrame::SetImageList(const std::string &name, const std::string &label) 
         }
         m_pImageListCtrl->InsertItem(i, wxString::Format("%s %lld", label, i), i);
     }
+}
+
+void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
+    const std::string prebundle_path = util::fs::join_path(m_pScene->get_path(), "prebundle.sfm");
+    sfm::bundler::ViewportList viewPorts;
+    sfm::bundler::PairwiseMatching pairwise_matching;
+    if (!util::fs::file_exists(prebundle_path.c_str())) {
+        // do pairwise
+    } else {
+        std::cout << "Loading pairwise matching from file..." << std::endl;
+        sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
+    }
+
+    /* Drop descriptors and embeddings to save memory. */
+    m_pScene->cache_cleanup();
+    for (auto & viewPort : viewPorts)
+        viewPort.features.clear_descriptors();
+
+    /* Check if there are some matching images. */
+    if (pairwise_matching.empty()) {
+        std::cerr << "No matching image pairs. Exiting." << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    /* Load camera intrinsics. */
+    sfm::bundler::Intrinsics::Options intrinsics_opts;
+    std::cout << "Initializing camera intrinsics..." << std::endl;
+    sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
+    intrinsics.compute(m_pScene, &viewPorts);
+    event.Skip();
 }
 

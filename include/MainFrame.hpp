@@ -10,6 +10,7 @@
 #include <wx/listctrl.h>
 #include <vector>
 #include "mve/view.h"
+#include "mve/scene.h"
 
 class MainFrame : public wxFrame {
 public:
@@ -22,18 +23,21 @@ public:
 
     enum MENU {
         MENU_SCENE_NEW,
-        MENU_SCENE_OPEN
+        MENU_SCENE_OPEN,
+        MENU_DO_SFM,
     };
 private:
     void OnMenuOpenScene(wxCommandEvent &event);
 
     void OnMenuNewScene(wxCommandEvent &event);
 
+    void OnMenuDoSfM(wxCommandEvent &event);
+
     wxListCtrl *m_pImageListCtrl;
     wxImageList *m_pImageList;
     wxMenuBar *m_pMenuBar;
 
-    std::vector<mve::View::Ptr> m_views;
+    mve::Scene::Ptr m_pScene;
 
     void SetImageList(const std::string &name, const std::string &label);
 };
