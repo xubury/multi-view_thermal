@@ -46,6 +46,8 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             std::exit(EXIT_FAILURE);
         }
         std::cout << "View Size: " << scene->get_views().size() << std::endl;
+
+        const std::string prebundle_path = util::fs::join_path(scene->get_path(), "prebundle.sfm");
     }
 }
 
@@ -60,8 +62,8 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 
         std::string aPath = dlg.GetPath().ToStdString();
         aPath = util::fs::sanitize_path(aPath);
-        std::string scenePath = aPath + "/scene";
-        std::string viewsPath = scenePath + "/views";
+        std::string scenePath = util::fs::join_path(aPath, "scene");
+        std::string viewsPath = util::fs::join_path(scenePath, "views");
         util::fs::mkdir(scenePath.c_str());
         util::fs::mkdir(viewsPath.c_str());
 
