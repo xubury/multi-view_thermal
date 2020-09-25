@@ -49,6 +49,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             event.Skip();
             return;
         }
+        DisplaySceneImage(ORIGINAL_IMAGE_NAME);
     }
     event.Skip();
 }
@@ -112,9 +113,9 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             int max_pixel = std::numeric_limits<int>::max();
             image = limit_image_size(image, max_pixel);
             if (orig_width == image->width() && has_jpeg_extension(fname))
-                view->set_image_ref(afname, "original");
+                view->set_image_ref(afname, ORIGINAL_IMAGE_NAME);
             else
-                view->set_image(image, "original");
+                view->set_image(image, ORIGINAL_IMAGE_NAME);
 
             add_exif_to_view(view, exif);
 
@@ -134,19 +135,19 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             std::remove(prebundle_path.c_str());
         }
 
-        SetImageList("original", "ID");
+        DisplaySceneImage(ORIGINAL_IMAGE_NAME);
     }
     event.Skip();
 }
 
-void MainFrame::SetImageList(const std::string &name, const std::string &label) {
+void MainFrame::DisplaySceneImage(const std::string &image_name) {
     mve::Scene::ViewList& views = m_pScene->get_views();
     if (views.empty()) {
         return;
     }
     m_pImageListCtrl->DeleteAllItems();
     for (std::size_t i = 0; i < views.size(); ++i) {
-        mve::ByteImage::Ptr image = views[i]->get_byte_image(name);
+        mve::ByteImage::Ptr image = views[i]->get_byte_image(image_name);
         wxImage icon(image->width(), image->height());
         memcpy(icon.GetData(), image->get_data_pointer(), image->get_byte_size());
         int width = 0;
@@ -156,7 +157,7 @@ void MainFrame::SetImageList(const std::string &name, const std::string &label) 
         if (!m_pImageList->Replace(i, icon)) {
             m_pImageList->Add(icon);
         }
-        m_pImageListCtrl->InsertItem(i, wxString::Format("%s %lld", label, i), i);
+        m_pImageListCtrl->InsertItem(i, wxString::Format("ID: %lld", i), i);
     }
 }
 

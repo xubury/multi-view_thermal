@@ -39,7 +39,7 @@ private:
 
     mve::Scene::Ptr m_pScene;
 
-    void SetImageList(const std::string &name, const std::string &label);
+    void DisplaySceneImage(const std::string &image_name);
 };
 
 
