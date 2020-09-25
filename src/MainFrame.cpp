@@ -76,6 +76,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
         sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
         intrinsics.compute(scene, &viewPorts);
     }
+    event.Skip();
 }
 
 void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
@@ -155,6 +156,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 
         SetImageList("original", "ID");
     }
+    event.Skip();
 }
 
 void MainFrame::SetImageList(const std::string &name, const std::string &label) {
