@@ -27,7 +27,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
 
     m_pMenuBar->Append(pFileMenu, _("File"));
     this->SetMenuBar(m_pMenuBar);
-
+    this->CreateStatusBar(1);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuOpenScene, this, MENU::MENU_SCENE_OPEN);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuNewScene, this, MENU::MENU_SCENE_NEW);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
@@ -50,6 +50,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             event.Skip();
             return;
         }
+        SetStatusText(aPath);
         DisplaySceneImage(ORIGINAL_IMAGE_NAME);
     }
     event.Skip();
@@ -136,6 +137,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             std::remove(prebundle_path.c_str());
         }
 
+        SetStatusText(scenePath);
         DisplaySceneImage(ORIGINAL_IMAGE_NAME);
     }
     event.Skip();
