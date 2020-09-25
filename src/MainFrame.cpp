@@ -5,6 +5,7 @@
 #include "util/system.h"
 #include "util/timer.h"
 #include "util/file_system.h"
+#include "mve/scene.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -33,6 +34,18 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
     wxDirDialog dlg(this);
     if (dlg.ShowModal() == wxID_OK) {
         util::system::print_build_timestamp("Open MVE Scene");
+
+        std::string aPath = dlg.GetPath().ToStdString();
+        aPath = util::fs::sanitize_path(aPath);
+
+        mve::Scene::Ptr scene;
+        try {
+            scene = mve::Scene::create(aPath);
+        } catch (const std::exception &e) {
+            std::cout << "Error Loading Scene: " << e.what() << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        std::cout << "View Size: " << scene->get_views().size() << std::endl;
     }
 }
 
@@ -47,8 +60,10 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 
         std::string aPath = dlg.GetPath().ToStdString();
         aPath = util::fs::sanitize_path(aPath);
-        std::string outputDir = aPath + "/scene";
-        util::fs::mkdir(outputDir.c_str());
+        std::string scenePath = aPath + "/scene";
+        std::string viewsPath = scenePath + "/views";
+        util::fs::mkdir(scenePath.c_str());
+        util::fs::mkdir(viewsPath.c_str());
 
         try {
             dir.scan(aPath);
@@ -103,7 +118,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 #pragma omp critical
             std::cout << "Importing image: " << fname
                       << ", writing MVE view: " << mve_fname << "..." << std::endl;
-            view->save_view_as(util::fs::join_path(outputDir, mve_fname));
+            view->save_view_as(util::fs::join_path(viewsPath, mve_fname));
             m_views.push_back(view);
         }
         std::cout << "Imported " << num_imported << " input images, took "
