@@ -90,7 +90,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         std::string aPath = dlg.GetPath().ToStdString();
         aPath = util::fs::sanitize_path(aPath);
         std::string scenePath = util::fs::join_path(aPath, "scene");
-        std::string viewsPath = util::fs::join_path(scenePath, "views");
+        std::string viewsPath = util::fs::join_path(scenePath, MVE_SCENE_VIEWS_DIR);
         util::fs::mkdir(scenePath.c_str());
         util::fs::mkdir(viewsPath.c_str());
 
