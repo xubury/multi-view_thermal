@@ -46,6 +46,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         util::fs::Directory dir;
 
         std::string aPath = dlg.GetPath().ToStdString();
+        aPath = util::fs::sanitize_path(aPath);
         std::string outputDir = aPath + "/scene";
         util::fs::mkdir(outputDir.c_str());
 
