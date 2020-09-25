@@ -20,13 +20,17 @@ if(OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wundef -pedantic -DEIGEN_DONT_VECTORIZE")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpmath=sse -funroll-loops")
+endif()
+
 add_subdirectory(elibs)
 
 add_executable(multi_view src/MainApp.cpp include/MainApp.hpp src/MainFrame.cpp include/MainFrame.hpp include/Image.hpp src/Image.cpp)
 
 add_dependencies(multi_view ext_mve)
 
-target_compile_options(multi_view PRIVATE -Wall -Winvalid-pch -Wunused-variable)
 target_compile_definitions(multi_view PRIVATE ${wxWidgets_DEFINITIONS})
 target_include_directories(multi_view PRIVATE include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs)
 target_precompile_headers(multi_view PRIVATE include/pch.hpp)
