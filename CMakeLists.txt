@@ -31,7 +31,7 @@ target_compile_definitions(multi_view PRIVATE ${wxWidgets_DEFINITIONS})
 target_include_directories(multi_view PRIVATE include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs)
 target_precompile_headers(multi_view PRIVATE include/pch.hpp)
 
-target_link_directories(multi_view PRIVATE elibs/mve/libs/mve elibs/mve/libs/util)
+target_link_directories(multi_view PRIVATE elibs/mve/libs/mve elibs/mve/libs/util elibs/mve/libs/sfm)
 target_link_libraries(multi_view ${wxWidgets_LIBRARIES} fmt::fmt
                       OpenGL::GL glbinding::glbinding glm
-                      mve mve_util ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+                      mve_sfm mve mve_util  ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})

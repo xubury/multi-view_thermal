@@ -6,6 +6,8 @@
 #include "util/timer.h"
 #include "util/file_system.h"
 #include "mve/scene.h"
+#include "sfm/bundler_common.h"
+#include "sfm/bundler_intrinsics.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -48,6 +50,31 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
         std::cout << "View Size: " << scene->get_views().size() << std::endl;
 
         const std::string prebundle_path = util::fs::join_path(scene->get_path(), "prebundle.sfm");
+        sfm::bundler::ViewportList viewPorts;
+        sfm::bundler::PairwiseMatching pairwise_matching;
+        if (!util::fs::file_exists(prebundle_path.c_str())) {
+
+        } else {
+            std::cout << "Loading pairwise matching from file..." << std::endl;
+            sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
+        }
+
+        /* Drop descriptors and embeddings to save memory. */
+        scene->cache_cleanup();
+        for (auto & viewPort : viewPorts)
+            viewPort.features.clear_descriptors();
+
+        /* Check if there are some matching images. */
+        if (pairwise_matching.empty()) {
+            std::cerr << "No matching image pairs. Exiting." << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        /* Load camera intrinsics. */
+        sfm::bundler::Intrinsics::Options intrinsics_opts;
+        std::cout << "Initializing camera intrinsics..." << std::endl;
+        sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
+        intrinsics.compute(scene, &viewPorts);
     }
 }
 
