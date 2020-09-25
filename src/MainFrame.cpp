@@ -14,9 +14,10 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
                      const wxSize &size) : wxFrame(parent, id, title, pos, size),
                                            m_pImageList(nullptr) {
     wxInitAllImageHandlers();
-    m_pImageListCtrl = new wxListCtrl(this);
+    m_pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_LIST);
     m_pImageList = new wxImageList(128, 128, false);
-    m_pImageListCtrl->SetImageList(m_pImageList, wxIMAGE_LIST_NORMAL);
+    m_pImageListCtrl->SetImageList(m_pImageList, wxIMAGE_LIST_SMALL);
+
     m_pMenuBar = new wxMenuBar();
 
     auto *pFileMenu = new wxMenu();
