@@ -6,7 +6,7 @@
 #include "mve/scene.h"
 #include "sfm/bundler_common.h"
 
-#define THUMBNAIL_SIZE 50
+#define THUMBNAIL_SIZE 128
 #define RAND_SEED_MATCHING 0
 #define MAX_IMAGE_SIZE 6000000
 #define ORIGINAL_IMAGE_NAME "original"

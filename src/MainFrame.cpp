@@ -14,9 +14,14 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
                      const wxSize &size) : wxFrame(parent, id, title, pos, size),
                                            m_pImageList(nullptr) {
     wxInitAllImageHandlers();
-    m_pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_LIST);
-    m_pImageList = new wxImageList(128, 128, false);
+    m_pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition,
+                                      wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
+    m_pImageListCtrl->InsertColumn(0, _("Image"), wxLIST_FORMAT_LEFT, THUMBNAIL_SIZE);
+    m_pImageList = new wxImageList(THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
     m_pImageListCtrl->SetImageList(m_pImageList, wxIMAGE_LIST_SMALL);
+    auto *pBoxSizer = new wxBoxSizer(wxHORIZONTAL);
+    pBoxSizer->Add(m_pImageListCtrl, 0, wxEXPAND);
+    this->SetSizerAndFit(pBoxSizer);
 
     m_pMenuBar = new wxMenuBar();
 
@@ -160,8 +165,10 @@ void MainFrame::DisplaySceneImage(const std::string &image_name) {
         if (!m_pImageList->Replace(i, icon)) {
             m_pImageList->Add(icon);
         }
-        m_pImageListCtrl->InsertItem(i, wxString::Format("ID: %lld", i), i);
+        m_pImageListCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
+                                                         views[i]->get_id(), views[i]->get_directory()), i);
     }
+    m_pImageListCtrl->SetColumnWidth(0, -1);
 }
 
 void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
