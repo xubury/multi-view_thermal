@@ -128,6 +128,12 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
                   << timer.get_elapsed() << " ms." << std::endl;
 
         m_pScene = mve::Scene::create(scenePath);
+        // If there is a bundle file exist in the disk, delete it.
+        const std::string prebundle_path = util::fs::join_path(m_pScene->get_path(), "prebundle.sfm");
+        if (util::fs::file_exists(prebundle_path.c_str())) {
+            std::remove(prebundle_path.c_str());
+        }
+
         SetImageList("original", "ID");
     }
     event.Skip();
