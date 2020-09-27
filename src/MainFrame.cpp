@@ -159,7 +159,7 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
     }
     wxListCtrl *listCtrl = image_list.first;
     wxImageList *iconList = image_list.second;
-    image_list.first->DeleteAllItems();
+    listCtrl->DeleteAllItems();
     for (std::size_t i = 0; i < views.size(); ++i) {
         mve::ByteImage::Ptr image = views[i]->get_byte_image(image_name);
         wxImage icon(image->width(), image->height());
@@ -174,7 +174,7 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
                                                  views[i]->get_id(), views[i]->get_directory()), i);
     }
-    image_list.first->SetColumnWidth(0, -1);
+    listCtrl->SetColumnWidth(0, -1);
 }
 
 void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
