@@ -39,6 +39,7 @@ private:
 
     mve::Scene::Ptr m_pScene;
 
+    /** Display images owned by m_pScene which have the name of 'image_name' */
     void DisplaySceneImage(const std::string &image_name);
 };
 

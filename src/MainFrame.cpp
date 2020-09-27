@@ -173,6 +173,7 @@ void MainFrame::DisplaySceneImage(const std::string &image_name) {
 }
 
 void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
+    // prebundle.sfm is for holding view and view matching info
     const std::string prebundle_path = util::fs::join_path(m_pScene->get_path(), "prebundle.sfm");
     sfm::bundler::ViewportList viewPorts;
     sfm::bundler::PairwiseMatching pairwise_matching;
