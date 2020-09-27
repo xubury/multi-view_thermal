@@ -9,6 +9,7 @@
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_intrinsics.h"
 #include "sfm/bundler_tracks.h"
+#include "sfm/bundler_init_pair.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -248,6 +249,32 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     }
     pairwise_matching.clear();
     pairwise_matching.shrink_to_fit();
+
+    /* Search for a good initial pair*/
+    //TODO: add a option for user to specify init pair manually
+    sfm::bundler::InitialPair::Result init_pair_result;
+    sfm::bundler::InitialPair::Options init_pair_opts;
+    //init_pair_opts.homography_opts.max_iterations = 1000;
+    //init_pair_opts.homography_opts.threshold = 0.005f;
+    init_pair_opts.homography_opts.verbose_output = false;
+    init_pair_opts.max_homography_inliers = 0.8f;
+    init_pair_opts.verbose_output = true;
+
+    sfm::bundler::InitialPair init_pair(init_pair_opts);
+    init_pair.initialize(viewPorts, tracks);
+    init_pair.compute_pair(&init_pair_result);
+
+    if (init_pair_result.view_1_id < 0 || init_pair_result.view_2_id < 0
+        || init_pair_result.view_1_id >= static_cast<int>(viewPorts.size())
+        || init_pair_result.view_2_id >= static_cast<int>(viewPorts.size())) {
+        std::cerr << "Error finding initial pair, exiting!" << std::endl;
+        std::cerr << "Try manually specifying an initial pair." << std::endl;
+        event.Skip();
+        return;
+    }
+    std::cout << "Using views " << init_pair_result.view_1_id
+              << " and " << init_pair_result.view_2_id
+              << " as initial pair." << std::endl;
 
     event.Skip();
 }
