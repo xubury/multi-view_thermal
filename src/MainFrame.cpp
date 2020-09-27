@@ -8,6 +8,7 @@
 #include "sfm/feature_set.h"
 #include "sfm/bundler_common.h"
 #include "sfm/bundler_intrinsics.h"
+#include "sfm/bundler_tracks.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -205,6 +206,22 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     std::cout << "Initializing camera intrinsics..." << std::endl;
     sfm::bundler::Intrinsics intrinsics(intrinsics_opts);
     intrinsics.compute(m_pScene, &viewPorts);
+
+    /** Incremental SfM*/
+    util::WallTimer timer;
+    util::system::rand_seed(RAND_SEED_SFM);
+
+    sfm::bundler::TrackList tracks;
+    {
+        sfm::bundler::Tracks::Options tracks_opts;
+        tracks_opts.verbose_output = true;
+
+        sfm::bundler::Tracks bundler_tracks(tracks_opts);
+        std::cout << "Computing feature tracks..." << std::endl;
+        bundler_tracks.compute(pairwise_matching, &viewPorts, &tracks);
+        std::cout << "Create a total of " << tracks.size() << " tracks." << std::endl;
+    }
+
     event.Skip();
 }
 

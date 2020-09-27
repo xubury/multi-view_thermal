@@ -8,6 +8,7 @@
 
 #define THUMBNAIL_SIZE 128
 #define RAND_SEED_MATCHING 0
+#define RAND_SEED_SFM 0
 #define MAX_IMAGE_SIZE 6000000
 #define ORIGINAL_IMAGE_NAME "original"
 
