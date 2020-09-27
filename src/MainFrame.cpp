@@ -174,7 +174,8 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
                                                  views[i]->get_id(), views[i]->get_directory()), i);
     }
-    listCtrl->SetColumnWidth(0, -1);
+    for (int i = 0; i < listCtrl->GetColumnCount(); ++i)
+        listCtrl->SetColumnWidth(i, -1);
 }
 
 void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
