@@ -14,6 +14,10 @@
 
 class MainFrame : public wxFrame {
 public:
+    /** ImageList, first is the list control display on window,
+     * second is the list that holds icon data.*/
+    typedef std::pair<wxListCtrl *, wxImageList *> ImageList;
+public:
     explicit MainFrame(wxWindow *parent, wxWindowID id = wxID_ANY,
                        const wxString &title = wxEmptyString,
                        const wxPoint &pos = wxDefaultPosition,
@@ -33,14 +37,14 @@ private:
 
     void OnMenuDoSfM(wxCommandEvent &event);
 
-    wxListCtrl *m_pImageListCtrl;
-    wxImageList *m_pImageList;
+    ImageList m_originalImageList;
+
     wxMenuBar *m_pMenuBar;
 
     mve::Scene::Ptr m_pScene;
 
-    /** Display images owned by m_pScene which have the name of 'image_name' */
-    void DisplaySceneImage(const std::string &image_name);
+    /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
+    void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
 };
 
 

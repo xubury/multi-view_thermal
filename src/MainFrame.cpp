@@ -12,16 +12,18 @@
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
-                     const wxSize &size) : wxFrame(parent, id, title, pos, size),
-                                           m_pImageList(nullptr) {
+                     const wxSize &size) : wxFrame(parent, id, title, pos, size) {
     wxInitAllImageHandlers();
-    m_pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition,
+    auto pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition,
                                       wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
-    m_pImageListCtrl->InsertColumn(0, _("Image"), wxLIST_FORMAT_LEFT, THUMBNAIL_SIZE);
-    m_pImageList = new wxImageList(THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
-    m_pImageListCtrl->SetImageList(m_pImageList, wxIMAGE_LIST_SMALL);
+    pImageListCtrl->InsertColumn(0, _("Image"), wxLIST_FORMAT_LEFT, THUMBNAIL_SIZE);
+    auto pImageList = new wxImageList(THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
+    pImageListCtrl->SetImageList(pImageList, wxIMAGE_LIST_SMALL);
+    m_originalImageList.first = pImageListCtrl;
+    m_originalImageList.second = pImageList;
+
     auto *pBoxSizer = new wxBoxSizer(wxHORIZONTAL);
-    pBoxSizer->Add(m_pImageListCtrl, 0, wxEXPAND);
+    pBoxSizer->Add(pImageListCtrl, 0, wxEXPAND);
     this->SetSizerAndFit(pBoxSizer);
 
     m_pMenuBar = new wxMenuBar();
@@ -57,7 +59,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             return;
         }
         SetStatusText(aPath);
-        DisplaySceneImage(ORIGINAL_IMAGE_NAME);
+        DisplaySceneImage(ORIGINAL_IMAGE_NAME, m_originalImageList);
     }
     event.Skip();
 }
@@ -144,32 +146,34 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
         }
 
         SetStatusText(scenePath);
-        DisplaySceneImage(ORIGINAL_IMAGE_NAME);
+        DisplaySceneImage(ORIGINAL_IMAGE_NAME, m_originalImageList);
     }
     event.Skip();
 }
 
-void MainFrame::DisplaySceneImage(const std::string &image_name) {
+void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList &image_list) {
     mve::Scene::ViewList& views = m_pScene->get_views();
     if (views.empty()) {
         return;
     }
-    m_pImageListCtrl->DeleteAllItems();
+    wxListCtrl *listCtrl = image_list.first;
+    wxImageList *iconList = image_list.second;
+    image_list.first->DeleteAllItems();
     for (std::size_t i = 0; i < views.size(); ++i) {
         mve::ByteImage::Ptr image = views[i]->get_byte_image(image_name);
         wxImage icon(image->width(), image->height());
         memcpy(icon.GetData(), image->get_data_pointer(), image->get_byte_size());
         int width = 0;
         int height = 0;
-        m_pImageList->GetSize(i, width, height);
+        iconList->GetSize(i, width, height);
         icon.Rescale(width, height);
-        if (!m_pImageList->Replace(i, icon)) {
-            m_pImageList->Add(icon);
+        if (!iconList->Replace(i, icon)) {
+            iconList->Add(icon);
         }
-        m_pImageListCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
-                                                         views[i]->get_id(), views[i]->get_directory()), i);
+        listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
+                                                 views[i]->get_id(), views[i]->get_directory()), i);
     }
-    m_pImageListCtrl->SetColumnWidth(0, -1);
+    image_list.first->SetColumnWidth(0, -1);
 }
 
 void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
