@@ -223,6 +223,14 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         std::cout << "Create a total of " << tracks.size() << " tracks." << std::endl;
     }
 
+    /** Remove color data and pairwise matching to save memory*/
+    for (auto & viewPort : viewPorts) {
+        viewPort.features.colors.clear();
+        viewPort.features.colors.shrink_to_fit();
+    }
+    pairwise_matching.clear();
+    pairwise_matching.shrink_to_fit();
+
     event.Skip();
 }
 
