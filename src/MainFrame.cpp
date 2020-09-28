@@ -186,12 +186,13 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching))
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching)) {
+            event.Skip();
             return; // no feature match
+        }
 
         std::cout << "Saving pre-bundle to file..." << std::endl;
-        sfm::bundler::save_prebundle_to_file(
-                viewPorts, pairwise_matching, prebundle_path);
+        sfm::bundler::save_prebundle_to_file( viewPorts, pairwise_matching, prebundle_path);
     } else {
         std::cout << "Loading pairwise matching from file..." << std::endl;
         sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
@@ -205,6 +206,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     /* Check if there are some matching images. */
     if (pairwise_matching.empty()) {
         std::cerr << "No matching image pairs." << std::endl;
+        event.Skip();
         return;
     }
 
