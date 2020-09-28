@@ -36,7 +36,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *glPanel = new GLPanel(this, wxID_ANY, args);
     pBoxSizer->Add(pImageListCtrl, 0, wxEXPAND);
     pBoxSizer->Add(glPanel, 1, wxEXPAND);
-    this->SetSizerAndFit(pBoxSizer);
+    this->SetSizer(pBoxSizer);
 
     m_pMenuBar = new wxMenuBar();
 
