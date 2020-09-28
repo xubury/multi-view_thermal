@@ -27,7 +27,10 @@ endif()
 
 add_subdirectory(elibs)
 
-add_executable(multi_view src/MainApp.cpp include/MainApp.hpp src/MainFrame.cpp include/MainFrame.hpp include/Image.hpp src/Image.cpp)
+add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
+                          src/MainFrame.cpp include/MainFrame.hpp
+                          include/Image.hpp src/Image.cpp
+                          src/GLPanel.cpp include/GLPanel.hpp)
 
 add_dependencies(multi_view ext_mve)
 

@@ -1,5 +1,5 @@
 #include "MainFrame.hpp"
-#include <cstring>
+#include "GLPanel.hpp"
 #include <algorithm>
 #include <atomic>
 #include "util/system.h"
@@ -27,7 +27,15 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     m_originalImageList.second = pImageList;
 
     auto *pBoxSizer = new wxBoxSizer(wxHORIZONTAL);
+    int args[] = {WX_GL_CORE_PROFILE,
+                  WX_GL_RGBA,
+                  WX_GL_DOUBLEBUFFER,
+                  WX_GL_DEPTH_SIZE, 16,
+                  WX_GL_STENCIL_SIZE, 0,
+                  0, 0 };
+    auto *glPanel = new GLPanel(this, wxID_ANY, args);
     pBoxSizer->Add(pImageListCtrl, 0, wxEXPAND);
+    pBoxSizer->Add(glPanel, 1, wxEXPAND);
     this->SetSizerAndFit(pBoxSizer);
 
     m_pMenuBar = new wxMenuBar();
