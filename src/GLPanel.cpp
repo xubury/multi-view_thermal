@@ -14,7 +14,7 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     this->Bind(wxEVT_SIZE, &GLPanel::OnResize, this);
 }
 
-void GLPanel::OnRender(wxPaintEvent &event) {
+void GLPanel::OnRender(wxPaintEvent &) {
     if (!IsShown())
         return;
     SetCurrent(*m_pContext);
@@ -28,4 +28,5 @@ void GLPanel::OnResize(wxSizeEvent &event)
 {
     glViewport(0, 0, GetSize().GetWidth(), GetSize().GetHeight());
     Update();
+    event.Skip();
 }
