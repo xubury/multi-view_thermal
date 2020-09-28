@@ -11,6 +11,7 @@
 #define RAND_SEED_SFM 0
 #define MAX_IMAGE_SIZE 6000000
 #define ORIGINAL_IMAGE_NAME "original"
+#define UNDISTORTED_IMAGE_NAME "undistorted"
 
 template<class T>
 typename mve::Image<T>::Ptr limit_image_size(typename mve::Image<T>::Ptr img, int max_pixels);

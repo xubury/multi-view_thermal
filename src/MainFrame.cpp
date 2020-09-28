@@ -10,6 +10,9 @@
 #include "sfm/bundler_intrinsics.h"
 #include "sfm/bundler_tracks.h"
 #include "sfm/bundler_init_pair.h"
+#include "sfm/bundler_incremental.h"
+#include "mve/image_tools.h"
+#include "mve/bundle_io.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -56,6 +59,11 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             m_pScene = mve::Scene::create(aPath);
         } catch (const std::exception &e) {
             std::cout << "Error Loading Scene: " << e.what() << std::endl;
+            event.Skip();
+            return;
+        }
+        if (m_pScene->get_views().empty()) {
+            wxLogMessage(_("Empty scene, please select a scene folder with .mve views."));
             event.Skip();
             return;
         }
@@ -277,6 +285,130 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
               << " and " << init_pair_result.view_2_id
               << " as initial pair." << std::endl;
 
+    /* Incrementally compute full bundle. */
+    sfm::bundler::Incremental::Options incremental_opts;
+    //incremental_opts.pose_p3p_opts.max_iterations = 1000;
+    //incremental_opts.pose_p3p_opts.threshold = 0.005f;
+    incremental_opts.pose_p3p_opts.verbose_output = false;
+    incremental_opts.track_error_threshold_factor = 10.0f;
+    incremental_opts.new_track_error_threshold = 0.01f;
+    incremental_opts.min_triangulation_angle = MATH_DEG2RAD(1.0);
+    incremental_opts.ba_fixed_intrinsics = false;
+    //incremental_opts.ba_shared_intrinsics = conf.shared_intrinsics;
+    incremental_opts.verbose_output = true;
+    incremental_opts.verbose_ba = false;
+
+    viewPorts[init_pair_result.view_1_id].pose = init_pair_result.view_1_pose;
+    viewPorts[init_pair_result.view_2_id].pose = init_pair_result.view_2_pose;
+
+    sfm::bundler::Incremental incremental(incremental_opts);
+    incremental.initialize(&viewPorts, &tracks);
+    incremental.triangulate_new_tracks(2);
+    incremental.invalidate_large_error_tracks();
+
+    std::cout << "Running full bundle adjustment..." << std::endl;
+    incremental.bundle_adjustment_full();
+
+    int num_cameras_reconstructed = 2;
+    int full_ba_num_skipped = 0;
+    while (true) {
+        std::vector<int> next_views;
+        incremental.find_next_views(&next_views);
+
+        int next_view_id = -1;
+        for (int next_view : next_views) {
+            std::cout << "Add next view ID " << next_view
+            << "(" << num_cameras_reconstructed + 1 << " of " << viewPorts.size() << ")...\n";
+            if (incremental.reconstruct_next_view(next_view)) {
+                next_view_id = next_view;
+                break;
+            }
+        }
+        std::flush(std::cout);
+        if (next_view_id < 0) {
+            if (full_ba_num_skipped == 0) {
+                std::cout << "No valid next view\n";
+                std::cout << "SfM reconstruction finished" << std::endl;
+                break;
+            } else {
+                incremental.triangulate_new_tracks(3);
+                std::cout << "Running full bundle adjustment..." << std::endl;
+                incremental.bundle_adjustment_full();
+                incremental.invalidate_large_error_tracks();
+                full_ba_num_skipped = 0;
+                continue;
+            }
+        }
+        /* Run single-camera bundle adjustment. */
+        std::cout << "Running single camera bundle adjustment..." << std::endl;
+        incremental.bundle_adjustment_single_cam(next_view_id);
+        num_cameras_reconstructed += 1;
+
+        /* Run full bundle adjustment only after a couple of views. */
+        const int full_ba_skip_views = std::min(100, num_cameras_reconstructed / 10);
+        if (full_ba_num_skipped < full_ba_skip_views) {
+            std::cout << "Skipping full bundle adjustment (skipping "
+                      << full_ba_skip_views << " views)." << std::endl;
+            full_ba_num_skipped += 1;
+        }
+        else {
+            incremental.triangulate_new_tracks(3);
+            incremental.try_restore_tracks_for_views();
+            std::cout << "Running full bundle adjustment..." << std::endl;
+            incremental.bundle_adjustment_full();
+            incremental.invalidate_large_error_tracks();
+            full_ba_num_skipped = 0;
+        }
+    }
+
+    std::cout << "SfM reconstruction took " << timer.get_elapsed()
+              << " ms." << std::endl;
+
+
+    std::cout << "Normalizing scene..." << std::endl;
+    incremental.normalize_scene();
+
+    std::cout << "Creating bundle data structure..." << std::endl;
+    mve::Bundle::Ptr bundle = incremental.create_bundle();
+    mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
+
+    /* Apply bundle cameras to views. */
+    mve::Bundle::Cameras const& bundle_cams = bundle->get_cameras();
+    mve::Scene::ViewList const& views = m_pScene->get_views();
+    if (bundle_cams.size() != views.size())
+    {
+        std::cerr << "Error: Invalid number of cameras!" << std::endl;
+        event.Skip();
+        return;
+    }
+
+#pragma omp parallel for schedule(dynamic,1)
+    for (std::size_t i = 0; i < bundle_cams.size(); ++i)
+    {
+        mve::View::Ptr view = views[i];
+        mve::CameraInfo const& cam = bundle_cams[i];
+        if (view == nullptr)
+            continue;
+        if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
+            continue;
+
+        view->set_camera(cam);
+
+        /* Undistort image. */
+        mve::ByteImage::Ptr original
+                = view->get_byte_image(ORIGINAL_IMAGE_NAME);
+        if (original == nullptr)
+            continue;
+        mve::ByteImage::Ptr undist
+                = mve::image::image_undistort_k2k4<uint8_t>
+                        (original, cam.flen, cam.dist[0], cam.dist[1]);
+        view->set_image(undist, UNDISTORTED_IMAGE_NAME);
+
+#pragma omp critical
+        std::cout << "Saving view " << view->get_directory() << std::endl;
+        view->save_view();
+        view->cache_cleanup();
+    }
     event.Skip();
 }
 
