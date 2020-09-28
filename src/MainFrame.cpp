@@ -211,14 +211,12 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     /* Load camera intrinsics. */
     {
         sfm::bundler::Intrinsics::Options intrinsics_opts;
-        if (m_pScene->get_views().back()->has_blob("exif"))
-        {
+        if (m_pScene->get_views().back()->has_blob("exif")) {
             //get camera intrinsics from exif
             std::cout << "Initializing camera intrinsics from exif..." << std::endl;
             intrinsics_opts.intrinsics_source = sfm::bundler::Intrinsics::FROM_EXIF;
         }
-        else
-        {
+        else {
             // get camera intrinsics from views
             // (if meta.ini has no intrinsics when loading the scene, then it get default value)
             std::cout << "Initializing camera intrinsics from views..." << std::endl;
