@@ -24,8 +24,7 @@ void GLPanel::OnRender(wxPaintEvent &) {
     SwapBuffers();
 }
 
-void GLPanel::OnResize(wxSizeEvent &event)
-{
+void GLPanel::OnResize(wxSizeEvent &event) {
     glViewport(0, 0, GetSize().GetWidth(), GetSize().GetHeight());
     Update();
     event.Skip();

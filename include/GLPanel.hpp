@@ -10,7 +10,9 @@ public:
     GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs = nullptr, const wxPoint &pos = wxDefaultPosition,
             const wxSize &size = wxDefaultSize, long style = 0, const wxString &name = wxGLCanvasName,
             const wxPalette &palette = wxNullPalette);
+
     ~GLPanel() override = default;
+
 private:
     void OnRender(wxPaintEvent &event);
 

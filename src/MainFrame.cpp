@@ -19,7 +19,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
                      const wxSize &size) : wxFrame(parent, id, title, pos, size) {
     wxInitAllImageHandlers();
     auto pImageListCtrl = new wxListCtrl(this, wxID_ANY, wxDefaultPosition,
-                                      wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
+                                         wxDefaultSize, wxLC_REPORT | wxLC_SINGLE_SEL);
     pImageListCtrl->InsertColumn(0, _("Image"), wxLIST_FORMAT_LEFT, THUMBNAIL_SIZE);
     auto pImageList = new wxImageList(THUMBNAIL_SIZE, THUMBNAIL_SIZE, false);
     pImageListCtrl->SetImageList(pImageList, wxIMAGE_LIST_SMALL);
@@ -32,7 +32,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
                   WX_GL_DOUBLEBUFFER,
                   WX_GL_DEPTH_SIZE, 16,
                   WX_GL_STENCIL_SIZE, 0,
-                  0, 0 };
+                  0, 0};
     auto *glPanel = new GLPanel(this, wxID_ANY, args);
     pBoxSizer->Add(pImageListCtrl, 0, wxEXPAND);
     pBoxSizer->Add(glPanel, 1, wxEXPAND);
@@ -169,7 +169,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 }
 
 void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList &image_list) {
-    mve::Scene::ViewList& views = m_pScene->get_views();
+    mve::Scene::ViewList &views = m_pScene->get_views();
     if (views.empty()) {
         return;
     }
@@ -208,7 +208,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         }
 
         std::cout << "Saving pre-bundle to file..." << std::endl;
-        sfm::bundler::save_prebundle_to_file( viewPorts, pairwise_matching, prebundle_path);
+        sfm::bundler::save_prebundle_to_file(viewPorts, pairwise_matching, prebundle_path);
     } else {
         std::cout << "Loading pairwise matching from file..." << std::endl;
         sfm::bundler::load_prebundle_from_file(prebundle_path, &viewPorts, &pairwise_matching);
@@ -216,7 +216,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
 
     /* Drop descriptors and embeddings to save memory. */
     m_pScene->cache_cleanup();
-    for (auto & viewPort : viewPorts)
+    for (auto &viewPort : viewPorts)
         viewPort.features.clear_descriptors();
 
     /* Check if there are some matching images. */
@@ -233,8 +233,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
             //get camera intrinsics from exif
             std::cout << "Initializing camera intrinsics from exif..." << std::endl;
             intrinsics_opts.intrinsics_source = sfm::bundler::Intrinsics::FROM_EXIF;
-        }
-        else {
+        } else {
             // get camera intrinsics from views
             // (if meta.ini has no intrinsics when loading the scene, then it get default value)
             std::cout << "Initializing camera intrinsics from views..." << std::endl;
@@ -260,7 +259,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     }
 
     /** Remove color data and pairwise matching to save memory*/
-    for (auto & viewPort : viewPorts) {
+    for (auto &viewPort : viewPorts) {
         viewPort.features.colors.clear();
         viewPort.features.colors.shrink_to_fit();
     }
@@ -326,7 +325,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         int next_view_id = -1;
         for (int next_view : next_views) {
             std::cout << "Add next view ID " << next_view
-            << "(" << num_cameras_reconstructed + 1 << " of " << viewPorts.size() << ")...\n";
+                      << "(" << num_cameras_reconstructed + 1 << " of " << viewPorts.size() << ")...\n";
             if (incremental.reconstruct_next_view(next_view)) {
                 next_view_id = next_view;
                 break;
@@ -358,8 +357,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
             std::cout << "Skipping full bundle adjustment (skipping "
                       << full_ba_skip_views << " views)." << std::endl;
             full_ba_num_skipped += 1;
-        }
-        else {
+        } else {
             incremental.triangulate_new_tracks(3);
             incremental.try_restore_tracks_for_views();
             std::cout << "Running full bundle adjustment..." << std::endl;
@@ -381,20 +379,18 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
 
     /* Apply bundle cameras to views. */
-    mve::Bundle::Cameras const& bundle_cams = bundle->get_cameras();
-    mve::Scene::ViewList const& views = m_pScene->get_views();
-    if (bundle_cams.size() != views.size())
-    {
+    mve::Bundle::Cameras const &bundle_cams = bundle->get_cameras();
+    mve::Scene::ViewList const &views = m_pScene->get_views();
+    if (bundle_cams.size() != views.size()) {
         std::cerr << "Error: Invalid number of cameras!" << std::endl;
         event.Skip();
         return;
     }
 
-#pragma omp parallel for schedule(dynamic,1)
-    for (std::size_t i = 0; i < bundle_cams.size(); ++i)
-    {
+#pragma omp parallel for schedule(dynamic, 1)
+    for (std::size_t i = 0; i < bundle_cams.size(); ++i) {
         mve::View::Ptr view = views[i];
-        mve::CameraInfo const& cam = bundle_cams[i];
+        mve::CameraInfo const &cam = bundle_cams[i];
         if (view == nullptr)
             continue;
         if (view->get_camera().flen == 0.0f && cam.flen == 0.0f)
