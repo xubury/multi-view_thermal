@@ -28,9 +28,6 @@ void GLPanel::OnRender(wxPaintEvent &) {
     wxPaintDC(this);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    m_projection = glm::perspective(glm::radians(m_pCamera->GetFOV()),
-                                    (float) GetSize().GetWidth() / (float) GetSize().GetHeight(),
-                                    0.1f, 100.0f);
     glm::mat4 view = m_pCamera->GetViewMatrix();
     for (const auto &target : m_targets) {
         target->Render(*m_pShader, m_projection, view);
@@ -40,6 +37,9 @@ void GLPanel::OnRender(wxPaintEvent &) {
 
 void GLPanel::OnResize(wxSizeEvent &event) {
     glViewport(0, 0, GetSize().GetWidth(), GetSize().GetHeight());
-    Update();
+    m_projection = glm::perspective(glm::radians(m_pCamera->GetFOV()),
+                                    (float) GetSize().GetWidth() / (float) GetSize().GetHeight(),
+                                    0.1f, 100.0f);
+    Refresh();
     event.Skip();
 }
