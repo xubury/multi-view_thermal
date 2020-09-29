@@ -30,7 +30,8 @@ add_subdirectory(elibs)
 add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
                           src/MainFrame.cpp include/MainFrame.hpp
                           include/Image.hpp src/Image.cpp
-                          src/GLPanel.cpp include/GLPanel.hpp)
+                          src/GLPanel.cpp include/GLPanel.hpp
+                          src/Shader.cpp include/Shader.hpp)
 
 add_dependencies(multi_view ext_mve)
 
@@ -42,3 +43,10 @@ target_link_directories(multi_view PRIVATE elibs/mve/libs/mve elibs/mve/libs/uti
 target_link_libraries(multi_view ${wxWidgets_LIBRARIES} fmt::fmt
                       OpenGL::GL glbinding::glbinding glm
                       mve_sfm mve mve_util  ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+
+add_custom_target(shader_files
+                  COMMAND ${CMAKE_COMMAND} -E copy_directory
+                  ${CMAKE_CURRENT_SOURCE_DIR}/shader
+                  ${CMAKE_BINARY_DIR}
+                  COMMENT "copying shader files...")
+add_dependencies(multi_view shader_files)
