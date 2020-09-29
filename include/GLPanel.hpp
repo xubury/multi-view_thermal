@@ -22,6 +22,8 @@ private:
 
     void OnResize(wxSizeEvent &event);
 
+    void OnMouseMove(wxMouseEvent &event);
+
     std::unique_ptr<wxGLContext> m_pContext;
 
     std::unique_ptr<Shader> m_pShader;
@@ -31,6 +33,10 @@ private:
     glm::mat4 m_projection;
 
     Camera::Ptr m_pCamera;
+
+    wxPoint m_lastMouse;
+
+    bool m_isFirstMouse;
 };
 
 

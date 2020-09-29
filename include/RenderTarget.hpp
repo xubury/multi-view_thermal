@@ -13,6 +13,11 @@ public:
 public:
     explicit RenderTarget(const glm::mat4 &model);
     void Render(const Shader &shader, const glm::mat4 &projection, const glm::mat4 &view);
+
+    void RotateFromView(float x_offset, float y_offset, const glm::mat4 &view);
+
+    void TranslateFromView(float x_offset, float y_offset, const glm::mat4 &projection, const glm::mat4 &view,
+                   int clip_width, int clip_height);
 protected:
     virtual void DrawArray() = 0;
 private:
