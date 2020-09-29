@@ -23,8 +23,6 @@ public:
                        const wxPoint &pos = wxDefaultPosition,
                        const wxSize &size = wxDefaultSize);
 
-    ~MainFrame() override = default;
-
     enum MENU {
         MENU_SCENE_NEW,
         MENU_SCENE_OPEN,

@@ -1,9 +1,13 @@
 #ifndef _GL_PANEL_HPP
 #define _GL_PANEL_HPP
 
+#include "RenderTarget.hpp"
+#include "Camera.hpp"
 #include <wx/wxprec.h>
 #include <wx/glcanvas.h>
+#include <vector>
 #include <memory>
+#include <glm/glm.hpp>
 
 class Shader;
 
@@ -13,8 +17,6 @@ public:
             const wxSize &size = wxDefaultSize, long style = 0, const wxString &name = wxGLCanvasName,
             const wxPalette &palette = wxNullPalette);
 
-    ~GLPanel() override = default;
-
 private:
     void OnRender(wxPaintEvent &event);
 
@@ -23,6 +25,12 @@ private:
     std::unique_ptr<wxGLContext> m_pContext;
 
     std::unique_ptr<Shader> m_pShader;
+
+    std::vector<RenderTarget::Ptr> m_targets;
+
+    glm::mat4 m_projection;
+
+    Camera::Ptr m_pCamera;
 };
 
 

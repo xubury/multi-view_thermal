@@ -2,9 +2,13 @@
 #define _SHADER_HPP
 
 #include <string>
+#include <memory>
 #include <glm/gtc/type_ptr.hpp>
 
 class Shader {
+public:
+    typedef std::unique_ptr<Shader> Ptr;
+    static Shader::Ptr Create(const std::string &vertex_path, const std::string &fragment_path);
 public:
     // the program ID
     unsigned int ID;
@@ -29,5 +33,9 @@ public:
     void setMat4f(const std::string &name, const glm::mat4 &value) const;
 };
 
+inline Shader::Ptr Shader::Create(const std::string &vertex_path, const std::string &fragment_path) {
+    Shader::Ptr shader(new Shader(vertex_path, fragment_path));
+    return shader;
+}
 
 #endif //_SHADER_HPP
