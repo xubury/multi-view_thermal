@@ -4,7 +4,7 @@
 using namespace gl;
 
 Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(0) {
-    unsigned int indices[] = {
+    m_indices = {
             0, 1, 1, 2, 2, 3, 3, 0,
             4, 5, 5, 6, 6, 7, 7, 4,
             0, 4, 1, 5, 2, 6, 3, 7
@@ -20,7 +20,7 @@ Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
     unsigned int EBO = 0;
     glGenBuffers(1, &EBO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * m_indices.size(), m_indices.data(), GL_STATIC_DRAW);
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) nullptr);
@@ -34,7 +34,7 @@ Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
 
 void Frustum::DrawArray() {
     glBindVertexArray(m_VAO);
-    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
 

@@ -16,6 +16,7 @@ protected:
 private:
     unsigned int m_VAO;
     unsigned int m_VBO;
+    std::vector<unsigned int> m_indices;
     std::vector<Vertex> m_vertices;
 };
 
