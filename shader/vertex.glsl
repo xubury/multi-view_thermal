@@ -8,6 +8,6 @@ uniform mat4 view;
 uniform mat4 model;
 
 void main() {
-    gl_Position = projection * view * model * vec4(vertex, 1.0);
-    Color = color;
+    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    Color = aColor;
 }

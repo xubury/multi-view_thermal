@@ -1,4 +1,5 @@
 #include "GLPanel.hpp"
+#include "Shader.hpp"
 #include <glbinding/glbinding.h>
 
 GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
@@ -9,6 +10,8 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     this->SetCurrent(*m_pContext);
 
     glbinding::initialize(nullptr);
+
+    m_pShader = std::make_unique<Shader>("vertex.glsl", "fragment.glsl");
 
     this->Bind(wxEVT_PAINT, &GLPanel::OnRender, this);
     this->Bind(wxEVT_SIZE, &GLPanel::OnResize, this);
