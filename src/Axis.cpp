@@ -52,5 +52,6 @@ void Axis::DrawArray() {
     glBindVertexArray(m_VAO);
     // the last parameter of glDrawArrays has to be the number of vertices
     glDrawArrays(GL_LINES, 0, 6);
+    glBindVertexArray(0);
 }
 

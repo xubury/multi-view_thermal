@@ -1,12 +1,13 @@
 #include "GLPanel.hpp"
 #include "Shader.hpp"
 #include "Axis.hpp"
+#include "Frustum.hpp"
 
 GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
                  const wxPoint &pos, const wxSize &size, long style,
                  const wxString &name, const wxPalette &palette) : wxGLCanvas(parent, win_id, displayAttrs, pos, size,
                                                                               style, name, palette),
-                                                                   m_projection(1.0f) {
+                                                                   m_projection(1.0f), m_isFirstMouse(true) {
     m_pContext = std::make_unique<wxGLContext>(this);
     this->SetCurrent(*m_pContext);
 
@@ -14,6 +15,9 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
     m_targets.emplace_back(RenderTarget::Create<Axis>());
+    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>();
+    frustum->As<Frustum>()->SetFrustum(0.1f, 0.5f, 45.f, glm::vec3(0.8f));
+    m_targets.emplace_back(frustum);
 
     m_pCamera = Camera::Create(glm::vec3(0, 0, 3.f));
 
@@ -46,21 +50,19 @@ void GLPanel::OnResize(wxSizeEvent &event) {
 }
 
 void GLPanel::OnMouseMove(wxMouseEvent &event) {
-    if (m_isFirstMouse)
-    {
+    if (m_isFirstMouse) {
         m_lastMouse = event.GetPosition();
         m_isFirstMouse = false;
     }
     wxPoint mouse = event.GetPosition();
-    float x_offset = (float)mouse.x - (float)m_lastMouse.x;
-    float y_offset = (float)m_lastMouse.y - (float)mouse.y;
+    float x_offset = (float) mouse.x - (float) m_lastMouse.x;
+    float y_offset = (float) m_lastMouse.y - (float) mouse.y;
     for (auto &target : m_targets) {
-        if(event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
+        if (event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
             target->RotateFromView(x_offset, y_offset, m_pCamera->GetViewMatrix());
-        }
-        else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
+        } else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
             target->TranslateFromView(x_offset, y_offset, m_projection, m_pCamera->GetViewMatrix(),
-                              GetSize().GetWidth(), GetSize().GetHeight());
+                                      GetSize().GetWidth(), GetSize().GetHeight());
         }
     }
     m_lastMouse = event.GetPosition();
