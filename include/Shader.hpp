@@ -8,7 +8,9 @@
 class Shader {
 public:
     typedef std::unique_ptr<Shader> Ptr;
+
     static Shader::Ptr Create(const std::string &vertex_path, const std::string &fragment_path);
+
 public:
     // the program ID
     unsigned int ID;

@@ -39,8 +39,8 @@ void find_min_max_percentile(typename mve::Image<T>::ConstPtr image, T *vmin, T 
 
 mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img);
 
-bool features_and_matching (mve::Scene::Ptr scene,
-                            sfm::bundler::ViewportList* viewports,
-                            sfm::bundler::PairwiseMatching* pairwise_matching);
+bool features_and_matching(mve::Scene::Ptr scene,
+                           sfm::bundler::ViewportList *viewports,
+                           sfm::bundler::PairwiseMatching *pairwise_matching);
 
 #endif //_IMAGE_HPP

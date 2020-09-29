@@ -133,10 +133,9 @@ std::string make_image_name(int id) {
     return "view_" + util::string::get_filled(id, 4) + ".mve";
 }
 
-template <typename T>
-void find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
-                         T* vmin, T* vmax)
-{
+template<typename T>
+void find_min_max_percentile(typename mve::Image<T>::ConstPtr image,
+                             T *vmin, T *vmax) {
     typename mve::Image<T>::Ptr copy = mve::Image<T>::create(*image);
     std::sort(copy->begin(), copy->end());
     *vmin = copy->at(copy->get_value_amount() / 10);
@@ -145,16 +144,14 @@ void find_min_max_percentile (typename mve::Image<T>::ConstPtr image,
 
 mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
     mve::ByteImage::Ptr image;
-    switch (img->get_type())
-    {
+    switch (img->get_type()) {
         case mve::IMAGE_TYPE_UINT8:
             image = mve::image::create_thumbnail<uint8_t>
                     (std::dynamic_pointer_cast<mve::ByteImage const>(img),
                      THUMBNAIL_SIZE, THUMBNAIL_SIZE);
             break;
 
-        case mve::IMAGE_TYPE_UINT16:
-        {
+        case mve::IMAGE_TYPE_UINT16: {
             mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
                     (std::dynamic_pointer_cast<mve::RawImage const>(img),
                      THUMBNAIL_SIZE, THUMBNAIL_SIZE);
@@ -164,8 +161,7 @@ mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
             break;
         }
 
-        case mve::IMAGE_TYPE_FLOAT:
-        {
+        case mve::IMAGE_TYPE_FLOAT: {
             mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
                     (std::dynamic_pointer_cast<mve::FloatImage const>(img),
                      THUMBNAIL_SIZE, THUMBNAIL_SIZE);
@@ -217,8 +213,7 @@ bool features_and_matching(mve::Scene::Ptr scene,
                   << " ms." << std::endl;
     }
 
-    if (pairwise_matching->empty())
-    {
+    if (pairwise_matching->empty()) {
         std::cerr << "Error: No matching image pairs." << std::endl;
         return false;
     } else {

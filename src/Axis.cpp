@@ -13,7 +13,7 @@ Axis::Axis(const glm::mat4 &model) : RenderTarget(model), m_VAO(0) {
             0.f, 0.f, 0.f, 0.f, 1.f, 0.f,
             0.f, 1.f, 0.f, 0.f, 1.f, 0.f,
             0.f, 0.f, 0.f, 0.f, 0.f, 1.f,
-            0.f, 0.f, 1.f, 0.f, 0.f, 1.f, };
+            0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 

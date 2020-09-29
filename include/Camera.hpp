@@ -30,7 +30,9 @@ class Camera {
 public:
     typedef std::unique_ptr<Camera> Ptr;
 
-    static Ptr Create(glm::vec3 position, glm::vec3 up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+    static Ptr
+    Create(glm::vec3 position, glm::vec3 up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+
 public:
     explicit Camera(glm::vec3 position, glm::vec3 up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
 

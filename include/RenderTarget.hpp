@@ -4,7 +4,7 @@
 #include <memory>
 #include "Shader.hpp"
 
-struct Vertex{
+struct Vertex {
     glm::vec3 Position;
     glm::vec3 Color;
 
@@ -20,16 +20,20 @@ public:
 
     template<typename T>
     T *As();
+
 public:
     explicit RenderTarget(const glm::mat4 &model);
+
     void Render(const Shader &shader, const glm::mat4 &projection, const glm::mat4 &view);
 
     void RotateFromView(float x_offset, float y_offset, const glm::mat4 &view);
 
     void TranslateFromView(float x_offset, float y_offset, const glm::mat4 &projection, const glm::mat4 &view,
-                   int clip_width, int clip_height);
+                           int clip_width, int clip_height);
+
 protected:
     virtual void DrawArray() = 0;
+
 private:
     glm::mat4 m_model;
 };
@@ -42,7 +46,7 @@ inline RenderTarget::Ptr RenderTarget::Create(const glm::mat4 &model) {
 }
 
 template<typename T>
-T *RenderTarget::As()  {
+T *RenderTarget::As() {
     static_assert(std::is_base_of<RenderTarget, T>::value, "T must be derived from RenderTarget");
     return dynamic_cast<T *>(this);
 }
