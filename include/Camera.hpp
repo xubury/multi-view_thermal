@@ -31,10 +31,10 @@ public:
     typedef std::unique_ptr<Camera> Ptr;
 
     static Ptr
-    Create(glm::vec3 position, glm::vec3 up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+    Create(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
 
 public:
-    explicit Camera(glm::vec3 position, glm::vec3 up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+    explicit Camera(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
 
     glm::mat4 GetViewMatrix() const;
 
@@ -68,7 +68,7 @@ private:
     float m_zoom;
 };
 
-inline Camera::Ptr Camera::Create(glm::vec3 position, glm::vec3 up, float yaw, float pitch) {
+inline Camera::Ptr Camera::Create(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch) {
     Camera::Ptr camera(new Camera(position, up, yaw, pitch));
     return camera;
 }

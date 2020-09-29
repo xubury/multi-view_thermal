@@ -1,6 +1,6 @@
 #include "Camera.hpp"
 
-Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
+Camera::Camera(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch)
         : m_position(position), m_front(glm::vec3(0.f, 0.f, -1.f)),
           m_up(0), m_right(0), m_worldUp(up), m_yaw(yaw),
           m_pitch(pitch), m_movementSpeed(SPEED), m_mouseSensitivity(SENSITIVITY), m_zoom(ZOOM) {
