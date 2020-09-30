@@ -74,7 +74,7 @@ void Camera::UpdateCameraVectors() {
 }
 
 glm::mat4 Camera::GetPerspective() const {
-    return glm::perspective(GetFOV(), (float)m_screenWidth / (float)m_screenHeight, 0.1f, 100.0f);
+    return glm::perspective(glm::radians(GetFOV()), (float)m_screenWidth / (float)m_screenHeight, 0.1f, 100.0f);
 }
 
 glm::mat4 Camera::CalculateRotateFromView(float x_offset, float y_offset) const {

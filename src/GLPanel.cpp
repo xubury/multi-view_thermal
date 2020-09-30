@@ -7,7 +7,7 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
                  const wxPoint &pos, const wxSize &size, long style,
                  const wxString &name, const wxPalette &palette) : wxGLCanvas(parent, win_id, displayAttrs, pos, size,
                                                                               style, name, palette),
-                                                                   m_projection(1.0f), m_isFirstMouse(true) {
+                                                                   m_isFirstMouse(true) {
     m_pContext = std::make_unique<wxGLContext>(this);
     this->SetCurrent(*m_pContext);
 
@@ -20,10 +20,12 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     m_targets.emplace_back(frustum);
 
     m_pCamera = Camera::Create(glm::vec3(0, 0, 3.f));
+    m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
 
-    this->Bind(wxEVT_PAINT, &GLPanel::OnRender, this);
-    this->Bind(wxEVT_SIZE, &GLPanel::OnResize, this);
-    this->Bind(wxEVT_MOTION, &GLPanel::OnMouseMove, this);
+    Bind(wxEVT_PAINT, &GLPanel::OnRender, this);
+    Bind(wxEVT_SIZE, &GLPanel::OnResize, this);
+    Bind(wxEVT_MOTION, &GLPanel::OnMouseMove, this);
+    Bind(wxEVT_MOUSEWHEEL, &GLPanel::OnMouseScroll, this);
 }
 
 void GLPanel::OnRender(wxPaintEvent &) {
@@ -42,9 +44,6 @@ void GLPanel::OnRender(wxPaintEvent &) {
 void GLPanel::OnResize(wxSizeEvent &event) {
     glViewport(0, 0, GetSize().GetWidth(), GetSize().GetHeight());
     m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
-    m_projection = glm::perspective(glm::radians(m_pCamera->GetFOV()),
-                                    (float) GetSize().GetWidth() / (float) GetSize().GetHeight(),
-                                    0.1f, 100.0f);
     Refresh();
     event.Skip();
 }
@@ -69,6 +68,13 @@ void GLPanel::OnMouseMove(wxMouseEvent &event) {
         target->Rotate(rotate);
     }
     m_lastMouse = event.GetPosition();
+    Refresh();
+    event.Skip();
+}
+
+void GLPanel::OnMouseScroll(wxMouseEvent &event) {
+    float scroll = (float)event.GetWheelRotation() / 50;
+    m_pCamera->ProcessMouseScroll(scroll);
     Refresh();
     event.Skip();
 }

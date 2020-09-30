@@ -92,7 +92,6 @@ inline glm::vec3 Camera::GetUp() {
     return m_up;
 }
 
-
 inline glm::vec3 Camera::GetPosition() const {
     return m_position;
 }

@@ -24,13 +24,13 @@ private:
 
     void OnMouseMove(wxMouseEvent &event);
 
+    void OnMouseScroll(wxMouseEvent &event);
+
     std::unique_ptr<wxGLContext> m_pContext;
 
     std::unique_ptr<Shader> m_pShader;
 
     std::vector<RenderTarget::Ptr> m_targets;
-
-    glm::mat4 m_projection;
 
     Camera::Ptr m_pCamera;
 
