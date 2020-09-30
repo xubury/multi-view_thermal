@@ -33,6 +33,11 @@ public:
     static Ptr
     Create(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
 
+    enum class Type {
+        ORTHODOX,
+        PERSPECTIVE
+    };
+
 public:
     explicit Camera(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
 
@@ -54,12 +59,13 @@ public:
 
     void SetScreenSize(int width, int height);
 
-    glm::mat4 GetPerspective() const;
+    glm::mat4 GetProjection() const;
 
     glm::mat4 CalculateRotateFromView(float x_offset, float y_offset) const;
 
     glm::mat4 CalculateTranslateFromView(float x_offset, float y_offset) const;
 
+    void SetCameraType(Type type);
 private:
     void UpdateCameraVectors();
 
@@ -77,6 +83,8 @@ private:
 
     int m_screenWidth;
     int m_screenHeight;
+
+    Type m_type;
 };
 
 inline Camera::Ptr Camera::Create(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch) {
@@ -103,6 +111,10 @@ inline float Camera::GetFOV() const {
 inline void Camera::SetScreenSize(int width, int height) {
     m_screenWidth = width;
     m_screenHeight = height;
+}
+
+inline void Camera::SetCameraType(Type type) {
+    m_type = type;
 }
 
 #endif //_CAMERA_HPP

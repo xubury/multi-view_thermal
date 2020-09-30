@@ -20,6 +20,7 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     m_targets.emplace_back(frustum);
 
     m_pCamera = Camera::Create(glm::vec3(0, 0, 3.f));
+    m_pCamera->SetCameraType(Camera::Type::ORTHODOX);
     m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
 
     Bind(wxEVT_PAINT, &GLPanel::OnRender, this);

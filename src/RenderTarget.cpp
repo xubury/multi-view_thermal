@@ -6,7 +6,7 @@ RenderTarget::RenderTarget(const glm::mat4 &model) : m_model(model) {
 
 void RenderTarget::Render(const Shader &shader, const Camera &camera) {
     shader.use();
-    shader.setMat4f("projection", camera.GetPerspective());
+    shader.setMat4f("projection", camera.GetProjection());
     shader.setMat4f("view", camera.GetViewMatrix());
     shader.setMat4f("model", m_model);
     DrawArray();
