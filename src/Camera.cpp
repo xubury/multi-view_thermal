@@ -58,8 +58,8 @@ void Camera::ProcessMouseScroll(float yoffset) {
     m_zoom -= yoffset;
     if (m_zoom < 1.0f) {
         m_zoom = 1.0f;
-    } else if (m_zoom > 45.f) {
-        m_zoom = 45.f;
+    } else if (m_zoom > 90.f) {
+        m_zoom = 90.f;
     }
 }
 
