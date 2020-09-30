@@ -32,6 +32,7 @@ public:
     void Rotate(const glm::mat4 &transform);
 
     glm::vec3 GetPosition();
+
 protected:
     virtual void DrawArray() = 0;
 

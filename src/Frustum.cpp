@@ -51,7 +51,7 @@ void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &co
             Vertex(glm::vec3(farX, farY, farZ), color),
             Vertex(glm::vec3(-farX, farY, farZ), color),
             Vertex(glm::vec3(-farX, -farY, farZ), color),
-            Vertex(glm::vec3(farX, -farY, farZ), color),
+            Vertex(glm::vec3(farX, -farY, farZ), color)
     };
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m_vertices.size(), m_vertices.data(), GL_STATIC_DRAW);

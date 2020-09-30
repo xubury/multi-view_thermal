@@ -31,7 +31,8 @@ public:
     typedef std::unique_ptr<Camera> Ptr;
 
     static Ptr
-    Create(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+    Create(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW,
+           float pitch = PITCH);
 
     enum class Type {
         ORTHODOX,
@@ -39,7 +40,8 @@ public:
     };
 
 public:
-    explicit Camera(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW, float pitch = PITCH);
+    explicit Camera(const glm::vec3 &position, const glm::vec3 &up = glm::vec3(0.f, 1.f, 0.f), float yaw = YAW,
+                    float pitch = PITCH);
 
     glm::mat4 GetViewMatrix() const;
 
@@ -66,6 +68,7 @@ public:
     glm::mat4 CalculateTranslateFromView(float x_offset, float y_offset) const;
 
     void SetCameraType(Type type);
+
 private:
     void UpdateCameraVectors();
 

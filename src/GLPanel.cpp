@@ -74,7 +74,7 @@ void GLPanel::OnMouseMove(wxMouseEvent &event) {
 }
 
 void GLPanel::OnMouseScroll(wxMouseEvent &event) {
-    float scroll = (float)event.GetWheelRotation() / 50;
+    float scroll = (float) event.GetWheelRotation() / 50;
     m_pCamera->ProcessMouseScroll(scroll);
     Refresh();
     event.Skip();

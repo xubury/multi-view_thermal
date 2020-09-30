@@ -76,12 +76,14 @@ void Camera::UpdateCameraVectors() {
 
 glm::mat4 Camera::GetProjection() const {
     if (m_type == Type::PERSPECTIVE)
-        return glm::perspective(glm::radians(GetFOV()), (float)m_screenWidth / (float)m_screenHeight, 0.1f, 100.0f);
+        return glm::perspective(glm::radians(GetFOV()), (float) m_screenWidth / (float) m_screenHeight, 0.1f, 100.0f);
     else {
         glm::mat4 view = GetViewMatrix();
         float ratio_size_per_depth = atan(glm::radians(GetFOV() / 2.0f)) * 2.0f;
-        float xFactor = (float) m_screenWidth / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) * ratio_size_per_depth;
-        float yFactor = (float) m_screenHeight / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) * ratio_size_per_depth;
+        float xFactor = (float) m_screenWidth / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) *
+                        ratio_size_per_depth;
+        float yFactor = (float) m_screenHeight / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) *
+                        ratio_size_per_depth;
         return glm::ortho(-xFactor, xFactor, -yFactor, yFactor, 0.1f, 100.0f);
     }
 }
