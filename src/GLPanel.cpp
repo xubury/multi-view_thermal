@@ -33,15 +33,15 @@ void GLPanel::OnRender(wxPaintEvent &) {
     wxPaintDC(this);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glm::mat4 view = m_pCamera->GetViewMatrix();
     for (const auto &target : m_targets) {
-        target->Render(*m_pShader, m_projection, view);
+        target->Render(*m_pShader, *m_pCamera);
     }
     SwapBuffers();
 }
 
 void GLPanel::OnResize(wxSizeEvent &event) {
     glViewport(0, 0, GetSize().GetWidth(), GetSize().GetHeight());
+    m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
     m_projection = glm::perspective(glm::radians(m_pCamera->GetFOV()),
                                     (float) GetSize().GetWidth() / (float) GetSize().GetHeight(),
                                     0.1f, 100.0f);
@@ -57,13 +57,16 @@ void GLPanel::OnMouseMove(wxMouseEvent &event) {
     wxPoint mouse = event.GetPosition();
     float x_offset = (float) mouse.x - (float) m_lastMouse.x;
     float y_offset = (float) m_lastMouse.y - (float) mouse.y;
+    glm::mat4 transform(1.0f);
+    glm::mat4 rotate(1.0f);
+    if (event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
+        rotate = m_pCamera->CalculateRotateFromView(x_offset, y_offset);
+    } else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
+        transform = m_pCamera->CalculateTranslateFromView(x_offset, y_offset);
+    }
     for (auto &target : m_targets) {
-        if (event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
-            target->RotateFromView(x_offset, y_offset, m_pCamera->GetViewMatrix());
-        } else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
-            target->TranslateFromView(x_offset, y_offset, m_projection, m_pCamera->GetViewMatrix(),
-                                      GetSize().GetWidth(), GetSize().GetHeight());
-        }
+        target->Transform(transform);
+        target->Rotate(rotate);
     }
     m_lastMouse = event.GetPosition();
     Refresh();

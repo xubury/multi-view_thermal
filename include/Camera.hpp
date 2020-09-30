@@ -52,6 +52,14 @@ public:
 
     glm::vec3 GetUp();
 
+    void SetScreenSize(int width, int height);
+
+    glm::mat4 GetPerspective() const;
+
+    glm::mat4 CalculateRotateFromView(float x_offset, float y_offset) const;
+
+    glm::mat4 CalculateTranslateFromView(float x_offset, float y_offset) const;
+
 private:
     void UpdateCameraVectors();
 
@@ -66,6 +74,9 @@ private:
     float m_movementSpeed;
     float m_mouseSensitivity;
     float m_zoom;
+
+    int m_screenWidth;
+    int m_screenHeight;
 };
 
 inline Camera::Ptr Camera::Create(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch) {
@@ -88,6 +99,11 @@ inline glm::vec3 Camera::GetPosition() const {
 
 inline float Camera::GetFOV() const {
     return m_zoom;
+}
+
+inline void Camera::SetScreenSize(int width, int height) {
+    m_screenWidth = width;
+    m_screenHeight = height;
 }
 
 #endif //_CAMERA_HPP

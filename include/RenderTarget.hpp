@@ -3,6 +3,7 @@
 
 #include <memory>
 #include "Shader.hpp"
+#include "Camera.hpp"
 
 struct Vertex {
     glm::vec3 Position;
@@ -24,13 +25,13 @@ public:
 public:
     explicit RenderTarget(const glm::mat4 &model);
 
-    void Render(const Shader &shader, const glm::mat4 &projection, const glm::mat4 &view);
+    void Render(const Shader &shader, const Camera &camera);
 
-    void RotateFromView(float x_offset, float y_offset, const glm::mat4 &view);
+    void Transform(const glm::mat4 &transform);
 
-    void TranslateFromView(float x_offset, float y_offset, const glm::mat4 &projection, const glm::mat4 &view,
-                           int screen_width, int screen_height);
+    void Rotate(const glm::mat4 &transform);
 
+    glm::vec3 GetPosition();
 protected:
     virtual void DrawArray() = 0;
 
@@ -49,6 +50,10 @@ template<typename T>
 T *RenderTarget::As() {
     static_assert(std::is_base_of<RenderTarget, T>::value, "T must be derived from RenderTarget");
     return dynamic_cast<T *>(this);
+}
+
+inline glm::vec3 RenderTarget::GetPosition() {
+    return m_model[3];
 }
 
 #endif //_RENDER_TARGET_HPP
