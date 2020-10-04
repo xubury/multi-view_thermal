@@ -7,7 +7,6 @@ class Axis : public RenderTarget {
 public:
     explicit Axis(const glm::mat4 &model);
 
-protected:
     void DrawArray() override;
 
 private:

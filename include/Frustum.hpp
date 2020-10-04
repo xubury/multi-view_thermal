@@ -4,6 +4,8 @@
 #include <vector>
 #include "RenderTarget.hpp"
 
+class Axis;
+
 class Frustum : public RenderTarget {
 public:
     explicit Frustum(const glm::mat4 &model);
@@ -18,6 +20,7 @@ private:
     unsigned int m_VBO;
     std::vector<unsigned int> m_indices;
     std::vector<Vertex> m_vertices;
+    std::unique_ptr<Axis> m_pAxis;
 };
 
 

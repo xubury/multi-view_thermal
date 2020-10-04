@@ -15,11 +15,6 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     glbinding::initialize(nullptr);
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
-    m_targets.emplace_back(RenderTarget::Create<Axis>());
-    glm::mat4 trans(1.0);
-    trans = glm::translate(trans, glm::vec3(0, 0, 1));
-    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>(trans);
-    m_targets.emplace_back(frustum);
 
     m_pCamera = Camera::Create(glm::vec3(0, 0, 45.f));
     m_pCamera->SetCameraType(Camera::Type::ORTHODOX);

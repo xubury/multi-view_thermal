@@ -417,7 +417,8 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     for (const auto &view : views) {
         glm::mat4 trans;
         view->get_camera().fill_world_to_cam(&trans[0].x);
-        m_pGLPanel->AddCameraFrustum(glm::transpose(trans));
+        trans = glm::transpose(trans);
+        m_pGLPanel->AddCameraFrustum(trans);
     }
 }
 

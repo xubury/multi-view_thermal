@@ -1,9 +1,11 @@
 #include "Frustum.hpp"
+#include "Axis.hpp"
 #include "glbinding/gl/gl.h"
 
 using namespace gl;
 
-Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(0) {
+Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(0),
+                                           m_pAxis(std::make_unique<Axis>(model)) {
     m_indices = {
             0, 1, 1, 2, 2, 3, 3, 0,
             4, 5, 5, 6, 6, 7, 7, 4,
@@ -29,13 +31,14 @@ Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
 
     glBindVertexArray(0);
 
-    SetFrustum(0.1, 1, 45, glm::vec3(0.8f));
+    SetFrustum(0.3, 1, 45, glm::vec3(0.8f));
 }
 
 void Frustum::DrawArray() {
     glBindVertexArray(m_VAO);
     glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    m_pAxis->DrawArray();
 }
 
 void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &color) {
