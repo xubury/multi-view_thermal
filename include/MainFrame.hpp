@@ -12,6 +12,8 @@
 #include "mve/view.h"
 #include "mve/scene.h"
 
+class GLPanel;
+
 class MainFrame : public wxFrame {
 public:
     /** ImageList, first is the list control display on window,
@@ -38,7 +40,7 @@ private:
     ImageList m_originalImageList;
 
     wxMenuBar *m_pMenuBar;
-
+    GLPanel *m_pGLPanel;
     mve::Scene::Ptr m_pScene;
 
     /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */

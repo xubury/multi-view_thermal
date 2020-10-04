@@ -2,6 +2,7 @@
 #include "Shader.hpp"
 #include "Axis.hpp"
 #include "Frustum.hpp"
+#include <algorithm>
 
 GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
                  const wxPoint &pos, const wxSize &size, long style,
@@ -15,11 +16,12 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
     m_targets.emplace_back(RenderTarget::Create<Axis>());
-    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>();
-    frustum->As<Frustum>()->SetFrustum(0.1f, 0.5f, 45.f, glm::vec3(0.8f));
+    glm::mat4 trans(1.0);
+    trans = glm::translate(trans, glm::vec3(0, 0, 1));
+    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>(trans);
     m_targets.emplace_back(frustum);
 
-    m_pCamera = Camera::Create(glm::vec3(0, 0, 3.f));
+    m_pCamera = Camera::Create(glm::vec3(0, 0, 45.f));
     m_pCamera->SetCameraType(Camera::Type::ORTHODOX);
     m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
 
@@ -58,15 +60,13 @@ void GLPanel::OnMouseMove(wxMouseEvent &event) {
     float x_offset = (float) mouse.x - (float) m_lastMouse.x;
     float y_offset = (float) m_lastMouse.y - (float) mouse.y;
     glm::mat4 transform(1.0f);
-    glm::mat4 rotate(1.0f);
     if (event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
-        rotate = m_pCamera->CalculateRotateFromView(x_offset, y_offset);
+        transform = m_pCamera->CalculateRotateFromView(x_offset, y_offset);
     } else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
         transform = m_pCamera->CalculateTranslateFromView(x_offset, y_offset);
     }
     for (auto &target : m_targets) {
         target->Transform(transform);
-        target->Rotate(rotate);
     }
     m_lastMouse = event.GetPosition();
     Refresh();
@@ -78,4 +78,15 @@ void GLPanel::OnMouseScroll(wxMouseEvent &event) {
     m_pCamera->ProcessMouseScroll(scroll);
     Refresh();
     event.Skip();
+}
+
+void GLPanel::AddCameraFrustum(const glm::mat4 &transform) {
+    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>(transform);
+    m_targets.emplace_back(frustum);
+}
+
+void GLPanel::ClearCameraFrustum() {
+    m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target)->bool {
+        return dynamic_cast<Frustum *>(target.get()) != nullptr;
+    }), m_targets.end());
 }

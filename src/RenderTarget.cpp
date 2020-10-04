@@ -15,10 +15,3 @@ void RenderTarget::Render(const Shader &shader, const Camera &camera) {
 void RenderTarget::Transform(const glm::mat4 &transform) {
     m_model = transform * m_model;
 }
-
-void RenderTarget::Rotate(const glm::mat4 &transform) {
-    glm::vec4 pos = m_model[3];
-    m_model[3] = glm::vec4(0.f, 0.f, 0.f, 1.f);
-    m_model = transform * m_model;
-    m_model[3] = pos;
-}

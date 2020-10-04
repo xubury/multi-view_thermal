@@ -69,6 +69,9 @@ public:
 
     void SetCameraType(Type type);
 
+    int GetScreenWidth() const;
+
+    int GetScreenHeight() const;
 private:
     void UpdateCameraVectors();
 
@@ -120,4 +123,11 @@ inline void Camera::SetCameraType(Type type) {
     m_type = type;
 }
 
+inline int Camera::GetScreenHeight() const {
+    return m_screenHeight;
+}
+
+inline int Camera::GetScreenWidth() const {
+    return m_screenWidth;
+}
 #endif //_CAMERA_HPP

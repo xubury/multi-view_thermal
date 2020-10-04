@@ -17,6 +17,9 @@ public:
             const wxSize &size = wxDefaultSize, long style = 0, const wxString &name = wxGLCanvasName,
             const wxPalette &palette = wxNullPalette);
 
+    void AddCameraFrustum(const glm::mat4 &transform);
+
+    void ClearCameraFrustum();
 private:
     void OnRender(wxPaintEvent &event);
 

@@ -29,8 +29,6 @@ public:
 
     void Transform(const glm::mat4 &transform);
 
-    void Rotate(const glm::mat4 &transform);
-
     glm::vec3 GetPosition();
 
 protected:

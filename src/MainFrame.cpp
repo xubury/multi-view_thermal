@@ -33,9 +33,9 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
                   WX_GL_DEPTH_SIZE, 16,
                   WX_GL_STENCIL_SIZE, 0,
                   0, 0};
-    auto *glPanel = new GLPanel(this, wxID_ANY, args);
+    m_pGLPanel = new GLPanel(this, wxID_ANY, args);
     pBoxSizer->Add(pImageListCtrl, 0, wxEXPAND);
-    pBoxSizer->Add(glPanel, 1, wxEXPAND);
+    pBoxSizer->Add(m_pGLPanel, 1, wxEXPAND);
     this->SetSizer(pBoxSizer);
 
     m_pMenuBar = new wxMenuBar();
@@ -413,6 +413,11 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         view->save_view();
         view->cache_cleanup();
     }
-    event.Skip();
+    m_pGLPanel->ClearCameraFrustum();
+    for (const auto &view : views) {
+        glm::mat4 trans;
+        view->get_camera().fill_world_to_cam(&trans[0].x);
+        m_pGLPanel->AddCameraFrustum(glm::transpose(trans));
+    }
 }
 
