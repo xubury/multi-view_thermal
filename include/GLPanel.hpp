@@ -25,6 +25,7 @@ public:
 
     template<typename T>
     void ClearObjects();
+
 private:
     void OnRender(wxPaintEvent &event);
 

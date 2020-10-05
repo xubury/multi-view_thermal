@@ -72,6 +72,7 @@ public:
     int GetScreenWidth() const;
 
     int GetScreenHeight() const;
+
 private:
     void UpdateCameraVectors();
 
@@ -130,4 +131,5 @@ inline int Camera::GetScreenHeight() const {
 inline int Camera::GetScreenWidth() const {
     return m_screenWidth;
 }
+
 #endif //_CAMERA_HPP

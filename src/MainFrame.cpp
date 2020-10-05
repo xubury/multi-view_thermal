@@ -429,4 +429,3 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         m_pGLPanel->AddCameraFrustum(trans);
     }
 }
-

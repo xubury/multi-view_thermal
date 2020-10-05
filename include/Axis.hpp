@@ -11,6 +11,7 @@ public:
 
 private:
     void DrawArray() override;
+
     unsigned int m_VAO;
 };
 
