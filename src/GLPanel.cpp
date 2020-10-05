@@ -77,7 +77,7 @@ void GLPanel::OnMouseScroll(wxMouseEvent &event) {
 }
 
 void GLPanel::AddCameraFrustum(const glm::mat4 &transform) {
-    RenderTarget::Ptr frustum = RenderTarget::Create<Frustum>(transform);
+    Frustum::Ptr frustum = RenderTarget::Create<Frustum>(transform);
     m_targets.emplace_back(frustum);
 }
 

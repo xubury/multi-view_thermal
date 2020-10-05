@@ -5,6 +5,8 @@
 
 class Axis : public RenderTarget {
 public:
+    using Ptr = std::shared_ptr<Axis>;
+public:
     explicit Axis(const glm::mat4 &model);
 
 private:

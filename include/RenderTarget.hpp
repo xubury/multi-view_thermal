@@ -14,10 +14,10 @@ struct Vertex {
 
 class RenderTarget {
 public:
-    typedef std::shared_ptr<RenderTarget> Ptr;
+    using Ptr = std::shared_ptr<RenderTarget>;
 
     template<typename T>
-    static Ptr Create(const glm::mat4 &model = glm::mat4(1.0));
+    static typename T::Ptr Create(const glm::mat4 &model = glm::mat4(1.0));
 
     template<typename T>
     T *As();
@@ -38,9 +38,9 @@ private:
 };
 
 template<typename T>
-inline RenderTarget::Ptr RenderTarget::Create(const glm::mat4 &model) {
+inline typename T::Ptr RenderTarget::Create(const glm::mat4 &model) {
     static_assert(std::is_base_of<RenderTarget, T>::value, "T must be derived from RenderTarget");
-    RenderTarget::Ptr target(new T(model));
+    typename T::Ptr target(new T(model));
     return target;
 }
 

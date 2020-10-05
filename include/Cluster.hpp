@@ -5,6 +5,8 @@
 
 class Cluster : public RenderTarget {
 public:
+    using Ptr = std::shared_ptr<Cluster>;
+public:
     explicit Cluster(const glm::mat4 &model);
 
     void SetCluster(const std::vector<Vertex> &vertices);

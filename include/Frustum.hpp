@@ -8,6 +8,8 @@ class Axis;
 
 class Frustum : public RenderTarget {
 public:
+    using Ptr = std::shared_ptr<Frustum>;
+public:
     explicit Frustum(const glm::mat4 &model);
 
     void SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &color);
