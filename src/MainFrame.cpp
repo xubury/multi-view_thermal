@@ -377,6 +377,14 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
     std::cout << "Creating bundle data structure..." << std::endl;
     mve::Bundle::Ptr bundle = incremental.create_bundle();
     mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
+    std::vector<Vertex> vertices(bundle->get_features().size());
+    mve::Bundle::Features &features = bundle->get_features();
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
+        vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
+    }
+    m_pGLPanel->ClearObjects<Cluster>();
+    m_pGLPanel->AddCluster(vertices);
 
     /* Apply bundle cameras to views. */
     mve::Bundle::Cameras const &bundle_cams = bundle->get_cameras();
@@ -413,7 +421,7 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         view->save_view();
         view->cache_cleanup();
     }
-    m_pGLPanel->ClearCameraFrustum();
+    m_pGLPanel->ClearObjects<Frustum>();
     for (const auto &view : views) {
         glm::mat4 trans;
         view->get_camera().fill_world_to_cam(&trans[0].x);

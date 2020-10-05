@@ -2,14 +2,16 @@
 #define _GL_PANEL_HPP
 
 #include "RenderTarget.hpp"
+#include "Axis.hpp"
+#include "Frustum.hpp"
+#include "Cluster.hpp"
 #include "Camera.hpp"
 #include <wx/wxprec.h>
 #include <wx/glcanvas.h>
 #include <vector>
 #include <memory>
+#include <algorithm>
 #include <glm/glm.hpp>
-
-class Shader;
 
 class GLPanel : public wxGLCanvas {
 public:
@@ -19,7 +21,10 @@ public:
 
     void AddCameraFrustum(const glm::mat4 &transform);
 
-    void ClearCameraFrustum();
+    void AddCluster(const std::vector<Vertex> &vertices);
+
+    template<typename T>
+    void ClearObjects();
 private:
     void OnRender(wxPaintEvent &event);
 
@@ -42,5 +47,11 @@ private:
     bool m_isFirstMouse;
 };
 
+template<typename T>
+inline void GLPanel::ClearObjects() {
+    m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target) -> bool {
+        return dynamic_cast<T *>(target.get()) != nullptr;
+    }), m_targets.end());
+}
 
 #endif //_GL_PANEL_HPP

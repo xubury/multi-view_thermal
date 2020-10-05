@@ -1,9 +1,5 @@
 #include "GLPanel.hpp"
 #include "Shader.hpp"
-#include "Axis.hpp"
-#include "Frustum.hpp"
-#include "Cluster.hpp"
-#include <algorithm>
 
 GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
                  const wxPoint &pos, const wxSize &size, long style,
@@ -81,8 +77,8 @@ void GLPanel::AddCameraFrustum(const glm::mat4 &transform) {
     m_targets.emplace_back(frustum);
 }
 
-void GLPanel::ClearCameraFrustum() {
-    m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target)->bool {
-        return dynamic_cast<Frustum *>(target.get()) != nullptr;
-    }), m_targets.end());
+void GLPanel::AddCluster(const std::vector<Vertex> &vertices) {
+    Cluster::Ptr cluster = RenderTarget::Create<Cluster>();
+    cluster->SetCluster(vertices);
+    m_targets.emplace_back(cluster);
 }
