@@ -9,7 +9,7 @@ struct Vertex {
     glm::vec3 Position;
     glm::vec3 Color;
 
-    Vertex(const glm::vec3 &pos, const glm::vec3 &color) : Position(pos), Color(color) {}
+    Vertex(const glm::vec3 &pos = glm::vec3(0), const glm::vec3 &color = glm::vec3(1)) : Position(pos), Color(color) {}
 };
 
 class RenderTarget {
@@ -31,7 +31,6 @@ public:
 
     glm::vec3 GetPosition();
 
-protected:
     virtual void DrawArray() = 0;
 
 private:

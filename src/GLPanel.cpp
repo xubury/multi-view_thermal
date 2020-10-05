@@ -2,6 +2,7 @@
 #include "Shader.hpp"
 #include "Axis.hpp"
 #include "Frustum.hpp"
+#include "Cluster.hpp"
 #include <algorithm>
 
 GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,

@@ -38,7 +38,7 @@ void Frustum::DrawArray() {
     glBindVertexArray(m_VAO);
     glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
-    m_pAxis->DrawArray();
+    m_pAxis->As<RenderTarget>()->DrawArray();
 }
 
 void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &color) {

@@ -12,10 +12,9 @@ public:
 
     void SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &color);
 
-protected:
+private:
     void DrawArray() override;
 
-private:
     unsigned int m_VAO;
     unsigned int m_VBO;
     std::vector<unsigned int> m_indices;

@@ -34,7 +34,9 @@ add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
                           src/Shader.cpp include/Shader.hpp
                           src/RenderTarget.cpp include/RenderTarget.hpp
                           src/Axis.cpp include/Axis.hpp
-                          src/Camera.cpp include/Camera.hpp src/Frustum.cpp include/Frustum.hpp)
+                          src/Camera.cpp include/Camera.hpp
+                          src/Frustum.cpp include/Frustum.hpp
+                          src/Cluster.cpp include/Cluster.hpp)
 
 add_dependencies(multi_view ext_mve)
 

@@ -7,9 +7,8 @@ class Axis : public RenderTarget {
 public:
     explicit Axis(const glm::mat4 &model);
 
-    void DrawArray() override;
-
 private:
+    void DrawArray() override;
     unsigned int m_VAO;
 };
 
