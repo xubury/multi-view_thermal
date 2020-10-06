@@ -29,6 +29,9 @@ public:
         MENU_SCENE_NEW,
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
+        MENU_DEPTH_RECON,
+        MENU_PSET_RECON,
+        MENU_FSS_RECON,
     };
 private:
     void OnMenuOpenScene(wxCommandEvent &event);

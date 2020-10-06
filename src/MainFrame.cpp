@@ -43,14 +43,18 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pFileMenu = new wxMenu();
     pFileMenu->Append(MENU::MENU_SCENE_OPEN, _("Open Scene"));
     pFileMenu->Append(MENU::MENU_SCENE_NEW, _("New Scene"));
-    pFileMenu->Append(MENU::MENU_DO_SFM, _("Do Sfm"));
-
-    m_pMenuBar->Append(pFileMenu, _("File"));
-    this->SetMenuBar(m_pMenuBar);
-    this->CreateStatusBar(1);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuOpenScene, this, MENU::MENU_SCENE_OPEN);
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuNewScene, this, MENU::MENU_SCENE_NEW);
-    pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
+
+    auto *pOperateMenu = new wxMenu();
+    pOperateMenu->Append(MENU::MENU_DO_SFM, _("Do Sfm"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
+
+    m_pMenuBar->Append(pFileMenu, _("File"));
+    m_pMenuBar->Append(pOperateMenu, _("Operation"));
+
+    this->SetMenuBar(m_pMenuBar);
+    this->CreateStatusBar(1);
 
     util::system::register_segfault_handler();
 }
