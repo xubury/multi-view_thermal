@@ -220,3 +220,25 @@ bool features_and_matching(mve::Scene::Ptr scene,
         return true;
     }
 }
+
+int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, const mvs::Settings &mvs) {
+    mve::View::Ptr view = scene->get_view_by_id(mvs.refViewNr);
+    if (view == nullptr)
+        return 0;
+
+    mve::View::ImageProxy const* proxy = view->get_image_proxy(mvs.imageEmbedding);
+    if (proxy == nullptr)
+        return 0;
+
+    int const width = proxy->width;
+    int const height = proxy->height;
+    if (width * height <= MAX_IMAGE_SIZE)
+        return 0;
+
+    float const ratio = width * height / static_cast<float>(MAX_IMAGE_SIZE);
+    float const scale = std::ceil(std::log(ratio) / std::log(4.0f));
+
+    std::cout << "Setting scale " << scale << " for " << width << "x" << height << " image." << std::endl;
+
+    return std::max(0, static_cast<int>(scale));
+}

@@ -13,6 +13,8 @@
 #include "sfm/bundler_incremental.h"
 #include "mve/image_tools.h"
 #include "mve/bundle_io.h"
+#include "dmrecon/settings.h"
+#include "dmrecon/dmrecon.h"
 #include "Image.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
@@ -49,7 +51,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
-    pOperateMenu->Append(MENU::MENU_DO_SFM, _("Depth Reconstruction"));
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Reconstruction"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON);
 
     pMenuBar->Append(pFileMenu, _("File"));
@@ -437,5 +439,42 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
 }
 
 void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
+    util::WallTimer timer;
+    mvs::Settings settings;
+    settings.scale = get_scale_from_max_pixel(m_pScene, settings);
+    mve::Scene::ViewList& views(m_pScene->get_views());
+    if (views.empty()) {
+        event.Skip();
+        return;
+    } else {
+#pragma omp parallel for schedule(dynamic, 1)
+        for (std::size_t id = 0; id < views.size(); ++id) {
+            if (views[id] == nullptr || !views[id]->is_camera_valid())
+                continue;
+
+            /* Setup MVS. */
+            settings.refViewNr = id;
+
+            std::string embedding_name = "depth-L"
+                                         + util::string::get(settings.scale);
+//            if (views[id]->has_image(embedding_name))
+//                continue;
+
+            try
+            {
+                mvs::DMRecon recon(m_pScene, settings);
+                recon.start();
+                views[id]->save_view();
+            }
+            catch (std::exception &err)
+            {
+                std::cerr << err.what() << std::endl;
+            }
+        }
+    }
+    std::cout << "Reconstruction took "
+              << timer.get_elapsed() << "ms." << std::endl;
+    std::cout << "Saving views back to disc..." << std::endl;
+    m_pScene->save_views();
     event.Skip();
 }

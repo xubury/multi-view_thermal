@@ -40,14 +40,18 @@ add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
 
 add_dependencies(multi_view ext_mve)
 
-target_compile_definitions(multi_view PRIVATE ${wxWidgets_DEFINITIONS})
-target_include_directories(multi_view PRIVATE include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs)
-target_precompile_headers(multi_view PRIVATE include/pch.hpp)
+target_compile_definitions(multi_view PUBLIC ${wxWidgets_DEFINITIONS})
+target_include_directories(multi_view PUBLIC include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs)
+target_precompile_headers(multi_view PUBLIC include/pch.hpp)
 
-target_link_directories(multi_view PRIVATE elibs/mve/libs/mve elibs/mve/libs/util elibs/mve/libs/sfm)
+target_link_directories(multi_view PUBLIC
+                        elibs/mve/libs/mve
+                        elibs/mve/libs/util
+                        elibs/mve/libs/sfm
+                        elibs/mve/libs/dmrecon)
 target_link_libraries(multi_view ${wxWidgets_LIBRARIES} fmt::fmt
                       OpenGL::GL glbinding::glbinding glm
-                      mve_sfm mve mve_util  ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+                      mve_dmrecon mve_sfm mve mve_util  ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 
 add_custom_target(shader_files
                   COMMAND ${CMAKE_COMMAND} -E copy_directory

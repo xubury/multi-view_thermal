@@ -1,6 +1,7 @@
 #ifndef _IMAGE_HPP
 #define _IMAGE_HPP
 
+#include <dmrecon/settings.h>
 #include "mve/image.h"
 #include "mve/view.h"
 #include "mve/scene.h"
@@ -9,7 +10,7 @@
 #define THUMBNAIL_SIZE 128
 #define RAND_SEED_MATCHING 0
 #define RAND_SEED_SFM 0
-#define MAX_IMAGE_SIZE 6000000
+#define MAX_IMAGE_SIZE 1500000
 #define ORIGINAL_IMAGE_NAME "original"
 #define UNDISTORTED_IMAGE_NAME "undistorted"
 
@@ -42,5 +43,7 @@ mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img);
 bool features_and_matching(mve::Scene::Ptr scene,
                            sfm::bundler::ViewportList *viewports,
                            sfm::bundler::PairwiseMatching *pairwise_matching);
+
+int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, const mvs::Settings &mvs);
 
 #endif //_IMAGE_HPP
