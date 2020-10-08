@@ -38,13 +38,12 @@ private:
 
     void OnMenuNewScene(wxCommandEvent &event);
 
-    void OnMenuDoSfM(wxCommandEvent &event);
+    void OnMenuStructureFromMotion(wxCommandEvent &event);
 
     void OnMenuDepthRecon(wxCommandEvent &event);
 
     ImageList m_originalImageList;
 
-    wxMenuBar *m_pMenuBar;
     GLPanel *m_pGLPanel;
     mve::Scene::Ptr m_pScene;
 

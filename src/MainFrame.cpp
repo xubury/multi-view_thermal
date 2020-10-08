@@ -38,7 +38,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     pBoxSizer->Add(m_pGLPanel, 1, wxEXPAND);
     this->SetSizer(pBoxSizer);
 
-    m_pMenuBar = new wxMenuBar();
+    auto *pMenuBar = new wxMenuBar();
 
     auto *pFileMenu = new wxMenu();
     pFileMenu->Append(MENU::MENU_SCENE_OPEN, _("Open Scene"));
@@ -47,15 +47,15 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     pFileMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuNewScene, this, MENU::MENU_SCENE_NEW);
 
     auto *pOperateMenu = new wxMenu();
-    pOperateMenu->Append(MENU::MENU_DO_SFM, _("Do Sfm"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
+    pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Depth Reconstruction"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON);
 
-    m_pMenuBar->Append(pFileMenu, _("File"));
-    m_pMenuBar->Append(pOperateMenu, _("Operation"));
+    pMenuBar->Append(pFileMenu, _("File"));
+    pMenuBar->Append(pOperateMenu, _("Operation"));
 
-    this->SetMenuBar(m_pMenuBar);
+    this->SetMenuBar(pMenuBar);
     this->CreateStatusBar(1);
 
     util::system::register_segfault_handler();
@@ -200,7 +200,7 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         listCtrl->SetColumnWidth(i, -1);
 }
 
-void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
+void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     // prebundle.sfm is for holding view and view matching info
     const std::string prebundle_path = util::fs::join_path(m_pScene->get_path(), "prebundle.sfm");
     sfm::bundler::ViewportList viewPorts;
