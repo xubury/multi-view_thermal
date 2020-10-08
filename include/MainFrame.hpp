@@ -40,6 +40,8 @@ private:
 
     void OnMenuDoSfM(wxCommandEvent &event);
 
+    void OnMenuDepthRecon(wxCommandEvent &event);
+
     ImageList m_originalImageList;
 
     wxMenuBar *m_pMenuBar;

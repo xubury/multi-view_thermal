@@ -49,6 +49,8 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Do Sfm"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDoSfM, this, MENU::MENU_DO_SFM);
+    pOperateMenu->Append(MENU::MENU_DO_SFM, _("Depth Reconstruction"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON);
 
     m_pMenuBar->Append(pFileMenu, _("File"));
     m_pMenuBar->Append(pOperateMenu, _("Operation"));
@@ -432,4 +434,8 @@ void MainFrame::OnMenuDoSfM(wxCommandEvent &event) {
         trans = glm::transpose(trans);
         m_pGLPanel->AddCameraFrustum(trans);
     }
+}
+
+void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
+    event.Skip();
 }
