@@ -10,6 +10,9 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     this->SetCurrent(*m_pContext);
 
     glbinding::initialize(nullptr);
+    gl::glDebugMessageCallback(&GLPanel::OpenGLDebugMessage, nullptr);
+    gl::glEnable(gl::GLenum::GL_DEBUG_OUTPUT);
+    gl::glEnable(gl::GLenum::GL_DEBUG_OUTPUT_SYNCHRONOUS);
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
 
@@ -81,4 +84,23 @@ void GLPanel::AddCluster(const std::vector<Vertex> &vertices) {
     Cluster::Ptr cluster = RenderTarget::Create<Cluster>();
     cluster->SetCluster(vertices);
     m_targets.emplace_back(cluster);
+}
+
+void GLPanel::OpenGLDebugMessage(gl::GLenum, gl::GLenum, gl::GLuint, gl::GLenum severity,
+                                 gl::GLsizei, const gl::GLchar *message, const void *) {
+    switch (severity) {
+        case gl::GL_DEBUG_SEVERITY_HIGH:
+            std::cout << "OpenGL Debug HIGH: " << message << std::endl;
+            break;
+        case gl::GL_DEBUG_SEVERITY_MEDIUM:
+            std::cout << "OpenGL Debug MEDIUM: " << message << std::endl;
+            break;
+        case gl::GL_DEBUG_SEVERITY_LOW:
+            std::cout << "OpenGL Debug LOW: " << message << std::endl;
+            break;
+        case gl::GL_DEBUG_SEVERITY_NOTIFICATION:
+            std::cout << "OpenGL Debug NOTIFICATION: " << message << std::endl;
+            break;
+        default: break;
+    }
 }

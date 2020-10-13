@@ -12,6 +12,7 @@
 #include <memory>
 #include <algorithm>
 #include <glm/glm.hpp>
+#include <glbinding/glbinding.h>
 
 class GLPanel : public wxGLCanvas {
 public:
@@ -26,6 +27,8 @@ public:
     template<typename T>
     void ClearObjects();
 
+    static void OpenGLDebugMessage(gl::GLenum source, gl::GLenum type, gl::GLuint id, gl::GLenum severity,
+                                   gl::GLsizei length, const gl::GLchar *message, const void *userdata);
 private:
     void OnRender(wxPaintEvent &event);
 
