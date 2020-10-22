@@ -16,6 +16,7 @@
 #include "dmrecon/settings.h"
 #include "dmrecon/dmrecon.h"
 #include "Image.hpp"
+#include "feature/Harris.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
                      const wxSize &size) : wxFrame(parent, id, title, pos, size) {
@@ -197,6 +198,13 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         }
         listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
                                                  views[i]->get_id(), views[i]->get_directory()), i);
+    }
+    Harris harris(1, 0, true);
+    try {
+        harris.SetImage(views[0]->get_byte_image("original"));
+        harris.Process();
+    } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
     }
     for (int i = 0; i < listCtrl->GetColumnCount(); ++i)
         listCtrl->SetColumnWidth(i, -1);
