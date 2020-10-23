@@ -1,11 +1,12 @@
 #include "feature/Harris.hpp"
+#include "util.hpp"
 
 Harris::Harris(float k, int filter_range, bool gauss)
         : m_k(k), m_filter_range(filter_range), m_gauss(gauss) {
 
 }
 
-void Harris::SetImage(mve::ByteImage::ConstPtr img) {
+void Harris::SetImage(const mve::ByteImage::ConstPtr& img) {
     if (img->channels() != 1 && img->channels() != 3)
         throw std::invalid_argument("Gray or color image expected");
 
@@ -19,9 +20,9 @@ void Harris::SetImage(mve::ByteImage::ConstPtr img) {
 void Harris::Process() {
     Derivatives d = ComputeDerivatives();
     if (m_gauss) {
-        ApplyGaussToDerivatives();
+        ApplyGaussToDerivatives(d, m_filter_range, 1);
     } else {
-        ApplyMeanToDerivatives();
+        ApplyMeanToDerivatives(d, m_filter_range);
     }
 }
 
@@ -63,9 +64,20 @@ Derivatives Harris::ComputeDerivatives() {
     return d;
 }
 
-Derivatives Harris::ApplyGaussToDerivatives() {
+void Harris::ApplyGaussToDerivatives(Derivatives &d, int filter_range, float sigma) {
+    if (filter_range == 0)
+        return;
 
+    d.Ix = util::GaussFilter(d.Ix, filter_range, sigma);
+    d.Iy = util::GaussFilter(d.Iy, filter_range, sigma);
+    d.Ixy = util::GaussFilter(d.Ixy, filter_range, sigma);
 }
 
-Derivatives Harris::ApplyMeanToDerivatives() {
+void Harris::ApplyMeanToDerivatives(Derivatives &d, int filter_range) {
+    if (filter_range == 0)
+        return;
+
+    d.Ix = util::MeanFilter(d.Ix, filter_range);
+    d.Iy = util::MeanFilter(d.Ix, filter_range);
+    d.Ixy = util::MeanFilter(d.Ixy, filter_range);
 }

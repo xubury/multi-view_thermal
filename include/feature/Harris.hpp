@@ -14,15 +14,15 @@ class Harris {
 public:
     Harris(float k, int filter_range, bool gauss);
 
-    void SetImage(mve::ByteImage::ConstPtr img);
+    void SetImage(const mve::ByteImage::ConstPtr& img);
 
     void Process();
 
     Derivatives ComputeDerivatives();
 
-    Derivatives ApplyGaussToDerivatives();
+    static void ApplyGaussToDerivatives(Derivatives &d, int filter_range, float sigma);
 
-    Derivatives ApplyMeanToDerivatives();
+    static void ApplyMeanToDerivatives(Derivatives &d, int filter_range);
 private:
     float m_k;
     int m_filter_range;

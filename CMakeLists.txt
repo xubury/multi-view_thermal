@@ -37,7 +37,7 @@ add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
                           src/Camera.cpp include/Camera.hpp
                           src/Frustum.cpp include/Frustum.hpp
                           src/Cluster.cpp include/Cluster.hpp
-                          src/feature/Harris.cpp include/feature/Harris.hpp)
+                          src/feature/Harris.cpp include/feature/Harris.hpp include/util.hpp src/util.cpp)
 
 add_dependencies(multi_view ext_mve)
 
