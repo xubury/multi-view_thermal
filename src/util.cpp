@@ -4,22 +4,23 @@
 
 namespace util {
 
-mve::FloatImage::Ptr GaussFilter(const mve::FloatImage::ConstPtr &img, int filter_range, float sigma) {
-    mve::FloatImage::Ptr gauss = mve::FloatImage::create(img->width() - filter_range * 2,
-                                                          img->height() - filter_range * 2, 1);
-    int ksize = filter_range * 2 + 1;
-    std::vector<double> gauss_template(ksize * ksize);
+void GaussFilter(const mve::FloatImage::ConstPtr &img,
+                                 mve::FloatImage::Ptr &out,
+                                 int filter_range,
+                                 float sigma) {
+    assert(img->channels() == 1);
+
+    out = mve::FloatImage::create(img->width() - filter_range * 2, img->height() - filter_range * 2, 1);
+
+    int k_size = filter_range * 2 + 1;
+    std::vector<double> gauss_template(k_size);
     double sum = 0;
-    for (int b = 0; b <= 2 * filter_range; b++)
+    for (int a = 0; a < k_size; a++)
     {
-        int y = b - filter_range;
-        for (int a = 0; a <= 2 * filter_range; a++)
-        {
-            int x = a - filter_range;
-            double m = std::exp(-(x * x + y * y) / (2 * sigma * sigma));
-            gauss_template[a + b * ksize] = m;
-            sum += m;
-        }
+        int x = a - filter_range;
+        double m = std::exp((-1.0f * x * x)  / (2.f * sigma * sigma));
+        gauss_template[a] = m;
+        sum += m;
     }
     std::transform(gauss_template.begin(),
                    gauss_template.end(),
@@ -30,19 +31,25 @@ mve::FloatImage::Ptr GaussFilter(const mve::FloatImage::ConstPtr &img, int filte
 #pragma omp parallel for schedule(dynamic, 1)
         for (int x = filter_range; x < img->width() - filter_range; ++x) {
             double res = 0;
-
-            for (int b = -filter_range; b <= filter_range; b++)
+            for (int a = -filter_range; a <= filter_range; a++)
             {
-                for (int a = -filter_range; a <= filter_range; a++)
-                {
-                    res += gauss_template.at(a + filter_range + (b + filter_range) * ksize)
-                        * img->at(x + a, y + b, 0);
-                }
+                res += gauss_template.at(a + filter_range) * img->at(x, y + a, 0);
             }
-            gauss->at(x - filter_range, y - filter_range, 0) = res;
+            out->at(x - filter_range, y - filter_range, 0) = res;
         }
     }
-    return gauss;
+#pragma omp parallel for schedule(dynamic, 1)
+    for (int y = filter_range; y < img->height() - filter_range; ++y) {
+#pragma omp parallel for schedule(dynamic, 1)
+        for (int x = filter_range; x < img->width() - filter_range; ++x) {
+            double res = 0;
+            for (int a = -filter_range; a <= filter_range; a++)
+            {
+                res += gauss_template.at(a + filter_range) * out->at(x - filter_range + a, y - filter_range, 0);
+            }
+            out->at(x - filter_range, y - filter_range, 0) = res;
+        }
+    }
 }
 
 mve::FloatImage::Ptr ComputeIntegralImg(const mve::FloatImage::ConstPtr &img) {
@@ -58,9 +65,8 @@ mve::FloatImage::Ptr ComputeIntegralImg(const mve::FloatImage::ConstPtr &img) {
     return integral_img;
 }
 
-mve::FloatImage::Ptr MeanFilter(const mve::FloatImage::ConstPtr &img, int filter_range) {
-    mve::FloatImage::Ptr medianFilteredImg =
-        mve::FloatImage::create(img->width() - 2 * filter_range, img->height() - 2 * filter_range, 1);
+void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out, int filter_range) {
+    out = mve::FloatImage::create(img->width() - 2 * filter_range, img->height() - 2 * filter_range, 1);
     mve::FloatImage::Ptr integral_img = ComputeIntegralImg(img);
     int k_size = 2 * filter_range + 1;
     float normal = 1.f  / (k_size * k_size);
@@ -72,10 +78,9 @@ mve::FloatImage::Ptr MeanFilter(const mve::FloatImage::ConstPtr &img, int filter
                     + integral_img->at(c - filter_range - 1, r - filter_range - 1, 0)
                     - integral_img->at(c + filter_range, r - filter_range - 1, 0)
                     - integral_img->at(c - filter_range - 1, r + filter_range, 0);
-            medianFilteredImg->at(c - filter_range - 1, r - filter_range - 1, 0) = sum * normal;
+            out->at(c - filter_range - 1, r - filter_range - 1, 0) = sum * normal;
         }
     }
-    return medianFilteredImg;
 }
 
 } // namespace util

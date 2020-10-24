@@ -21,7 +21,7 @@ public:
 
     using KeyPoints = std::vector<KeyPoint>;
 public:
-    Harris(float k, int filter_range, bool gauss);
+    Harris(float k, int filter_range, float sigma);
 
     void SetImage(const mve::ByteImage::ConstPtr &img);
 
@@ -31,18 +31,19 @@ public:
 private:
     Derivatives ComputeDerivatives();
 
-    void ApplyGaussToDerivatives(Derivatives &d, float sigma);
+    void ApplyGaussToDerivatives(float sigma);
 
-    void ApplyMeanToDerivatives(Derivatives &d);
+    void ApplyMeanToDerivatives();
 
-    void ComputeHarrisResponses(const Derivatives &d);
+    void ComputeHarrisResponses();
 private:
     float m_k;
     int m_filter_range;
-    bool m_gauss;
+    float m_sigma;
 
     mve::FloatImage::ConstPtr m_orig; // Original input image
     mve::FloatImage::Ptr m_harris_responses;
+    Derivatives m_derivatives;
 };
 
 #endif //_HARRIS_HPP

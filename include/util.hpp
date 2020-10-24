@@ -5,11 +5,14 @@
 
 namespace util {
 
-mve::FloatImage::Ptr GaussFilter(const mve::FloatImage::ConstPtr &img, int filter_range, float sigma);
+void GaussFilter(const mve::FloatImage::ConstPtr &img,
+                                 mve::FloatImage::Ptr &out,
+                                 int filter_range,
+                                 float sigma);
 
 mve::FloatImage::Ptr ComputeIntegralImg(const mve::FloatImage::ConstPtr &img);
 
-mve::FloatImage::Ptr MeanFilter(const mve::FloatImage::ConstPtr &img, int filter_range);
+void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out, int filter_range);
 } // namespace util
 
 #endif //_UTIL_HPP

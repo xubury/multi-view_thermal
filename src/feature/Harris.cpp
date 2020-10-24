@@ -1,8 +1,8 @@
 #include "feature/Harris.hpp"
 #include "util.hpp"
 
-Harris::Harris(float k, int filter_range, bool gauss)
-        : m_k(k), m_filter_range(filter_range), m_gauss(gauss) {
+Harris::Harris(float k, int filter_range, float sigma)
+        : m_k(k), m_filter_range(filter_range), m_sigma(sigma) {
 
 }
 
@@ -18,13 +18,13 @@ void Harris::SetImage(const mve::ByteImage::ConstPtr& img) {
 }
 
 void Harris::Process() {
-    Derivatives d = ComputeDerivatives();
-    if (m_gauss) {
-        ApplyGaussToDerivatives(d, 1);
+    m_derivatives = ComputeDerivatives();
+    if (m_sigma > 1e-7) {
+        ApplyGaussToDerivatives(1);
     } else {
-        ApplyMeanToDerivatives(d);
+        ApplyMeanToDerivatives();
     }
-    ComputeHarrisResponses(d);
+    ComputeHarrisResponses();
 }
 
 Harris::Derivatives Harris::ComputeDerivatives() {
@@ -65,34 +65,34 @@ Harris::Derivatives Harris::ComputeDerivatives() {
     return d;
 }
 
-void Harris::ApplyGaussToDerivatives(Derivatives &d, float sigma) {
+void Harris::ApplyGaussToDerivatives(float sigma) {
     if (m_filter_range == 0)
         return;
 
-    d.Ix = util::GaussFilter(d.Ix, m_filter_range, sigma);
-    d.Iy = util::GaussFilter(d.Iy, m_filter_range, sigma);
-    d.Ixy = util::GaussFilter(d.Ixy, m_filter_range, sigma);
+    util::GaussFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range, sigma);
+    util::GaussFilter(m_derivatives.Iy, m_derivatives.Iy, m_filter_range, sigma);
+    util::GaussFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range, sigma);
 }
 
-void Harris::ApplyMeanToDerivatives(Derivatives &d) {
+void Harris::ApplyMeanToDerivatives() {
     if (m_filter_range == 0)
         return;
 
-    d.Ix = util::MeanFilter(d.Ix, m_filter_range);
-    d.Iy = util::MeanFilter(d.Ix, m_filter_range);
-    d.Ixy = util::MeanFilter(d.Ixy, m_filter_range);
+    util::MeanFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range);
+    util::MeanFilter(m_derivatives.Ix, m_derivatives.Iy, m_filter_range);
+    util::MeanFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range);
 }
 
-void Harris::ComputeHarrisResponses(const Derivatives &d) {
-    m_harris_responses = mve::FloatImage::create(d.Ix->width(), d.Iy->height(), 1);
-    for (int r = 0; r < d.Iy->height(); r++) {
-        for (int c = 0; c < d.Iy->width(); c++) {
+void Harris::ComputeHarrisResponses() {
+    m_harris_responses = mve::FloatImage::create(m_derivatives.Ix->width(), m_derivatives.Iy->height(), 1);
+    for (int r = 0; r < m_derivatives.Iy->height(); r++) {
+        for (int c = 0; c < m_derivatives.Iy->width(); c++) {
             float a11, a12, a21, a22;
 
-            a11 = d.Ix->at(c, r, 0) * d.Ix->at(c, r, 0);
-            a22 = d.Iy->at(c, r, 0) * d.Iy->at(c, r, 0);
-            a21 = d.Ix->at(c, r, 0) * d.Iy->at(c, r, 0);
-            a12 = d.Ix->at(c, r, 0) * d.Iy->at(c, r, 0);
+            a11 = m_derivatives.Ix->at(c, r, 0) * m_derivatives.Ix->at(c, r, 0);
+            a22 = m_derivatives.Iy->at(c, r, 0) * m_derivatives.Iy->at(c, r, 0);
+            a21 = m_derivatives.Ix->at(c, r, 0) * m_derivatives.Iy->at(c, r, 0);
+            a12 = m_derivatives.Ix->at(c, r, 0) * m_derivatives.Iy->at(c, r, 0);
 
             float det = a11*a22 - a12*a21;
             float trace = a11 + a22;
