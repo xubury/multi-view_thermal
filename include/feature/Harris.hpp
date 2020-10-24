@@ -4,32 +4,45 @@
 #include "mve/image_io.h"
 #include "mve/image_tools.h"
 
-struct Derivatives {
-    mve::FloatImage::Ptr Ix;
-    mve::FloatImage::Ptr Iy;
-    mve::FloatImage::Ptr Ixy;
-};
-
 class Harris {
+public:
+    struct Derivatives {
+        mve::FloatImage::Ptr Ix;
+        mve::FloatImage::Ptr Iy;
+        mve::FloatImage::Ptr Ixy;
+    };
+
+    struct KeyPoint {
+        int x;
+        int y;
+        float corner_response;
+        KeyPoint(int xx, int yy, float response) : x(xx), y(yy), corner_response(response) {}
+    };
+
+    using KeyPoints = std::vector<KeyPoint>;
 public:
     Harris(float k, int filter_range, bool gauss);
 
-    void SetImage(const mve::ByteImage::ConstPtr& img);
+    void SetImage(const mve::ByteImage::ConstPtr &img);
 
     void Process();
 
+    KeyPoints GetMaximaPoints(float percentage, int suppression_radius);
+private:
     Derivatives ComputeDerivatives();
 
-    static void ApplyGaussToDerivatives(Derivatives &d, int filter_range, float sigma);
+    void ApplyGaussToDerivatives(Derivatives &d, float sigma);
 
-    static void ApplyMeanToDerivatives(Derivatives &d, int filter_range);
+    void ApplyMeanToDerivatives(Derivatives &d);
+
+    void ComputeHarrisResponses(const Derivatives &d);
 private:
     float m_k;
     int m_filter_range;
     bool m_gauss;
 
     mve::FloatImage::ConstPtr m_orig; // Original input image
+    mve::FloatImage::Ptr m_harris_responses;
 };
-
 
 #endif //_HARRIS_HPP

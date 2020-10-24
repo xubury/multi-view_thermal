@@ -20,13 +20,14 @@ void Harris::SetImage(const mve::ByteImage::ConstPtr& img) {
 void Harris::Process() {
     Derivatives d = ComputeDerivatives();
     if (m_gauss) {
-        ApplyGaussToDerivatives(d, m_filter_range, 1);
+        ApplyGaussToDerivatives(d, 1);
     } else {
-        ApplyMeanToDerivatives(d, m_filter_range);
+        ApplyMeanToDerivatives(d);
     }
+    ComputeHarrisResponses(d);
 }
 
-Derivatives Harris::ComputeDerivatives() {
+Harris::Derivatives Harris::ComputeDerivatives() {
     mve::FloatImage::Ptr sobel_vertical = mve::FloatImage::create(m_orig->width(), m_orig->height() - 2, 1);
     for (int y = 1; y < sobel_vertical->height() - 1; ++y) {
         for (int x = 0; x < sobel_vertical->width(); ++x) {
@@ -64,20 +65,98 @@ Derivatives Harris::ComputeDerivatives() {
     return d;
 }
 
-void Harris::ApplyGaussToDerivatives(Derivatives &d, int filter_range, float sigma) {
-    if (filter_range == 0)
+void Harris::ApplyGaussToDerivatives(Derivatives &d, float sigma) {
+    if (m_filter_range == 0)
         return;
 
-    d.Ix = util::GaussFilter(d.Ix, filter_range, sigma);
-    d.Iy = util::GaussFilter(d.Iy, filter_range, sigma);
-    d.Ixy = util::GaussFilter(d.Ixy, filter_range, sigma);
+    d.Ix = util::GaussFilter(d.Ix, m_filter_range, sigma);
+    d.Iy = util::GaussFilter(d.Iy, m_filter_range, sigma);
+    d.Ixy = util::GaussFilter(d.Ixy, m_filter_range, sigma);
 }
 
-void Harris::ApplyMeanToDerivatives(Derivatives &d, int filter_range) {
-    if (filter_range == 0)
+void Harris::ApplyMeanToDerivatives(Derivatives &d) {
+    if (m_filter_range == 0)
         return;
 
-    d.Ix = util::MeanFilter(d.Ix, filter_range);
-    d.Iy = util::MeanFilter(d.Ix, filter_range);
-    d.Ixy = util::MeanFilter(d.Ixy, filter_range);
+    d.Ix = util::MeanFilter(d.Ix, m_filter_range);
+    d.Iy = util::MeanFilter(d.Ix, m_filter_range);
+    d.Ixy = util::MeanFilter(d.Ixy, m_filter_range);
+}
+
+void Harris::ComputeHarrisResponses(const Derivatives &d) {
+    m_harris_responses = mve::FloatImage::create(d.Ix->width(), d.Iy->height(), 1);
+    for (int r = 0; r < d.Iy->height(); r++) {
+        for (int c = 0; c < d.Iy->width(); c++) {
+            float a11, a12, a21, a22;
+
+            a11 = d.Ix->at(c, r, 0) * d.Ix->at(c, r, 0);
+            a22 = d.Iy->at(c, r, 0) * d.Iy->at(c, r, 0);
+            a21 = d.Ix->at(c, r, 0) * d.Iy->at(c, r, 0);
+            a12 = d.Ix->at(c, r, 0) * d.Iy->at(c, r, 0);
+
+            float det = a11*a22 - a12*a21;
+            float trace = a11 + a22;
+
+            m_harris_responses->at(c, r, 0) = std::abs(det - m_k * trace*trace);
+        }
+    }
+}
+
+Harris::KeyPoints Harris::GetMaximaPoints(float percentage, int suppression_radius) {
+    mve::FloatImage::Ptr
+        maxima_suppression_img = mve::FloatImage::create(m_harris_responses->width(), m_harris_responses->height(), 1);
+
+    KeyPoints points;
+    for (int r = 0; r < m_harris_responses->height(); ++r) {
+        for (int c = 0; c < m_harris_responses->width(); ++c) {
+            points.emplace_back(c, r, m_harris_responses->at(c, r, 0));
+        }
+    }
+
+    std::sort(points.begin(),
+              points.end(),
+              [](const KeyPoint &pt1, const KeyPoint &pt2) {
+                return pt1.corner_response > pt2.corner_response;
+              });
+
+    std::size_t top_points_cnt = points.size() * percentage;
+    KeyPoints maxima_points;
+    std::size_t i = 0;
+    while (maxima_points.size() < top_points_cnt) {
+        if (i == points.size()) {
+            break;
+        }
+
+        int sup_rows = maxima_suppression_img->height();
+        int sup_cols = maxima_suppression_img->width();
+
+        // Check if point marked in maximaSuppression matrix
+        if(maxima_suppression_img->at(points[i].x, points[i].y, 0) == 0) {
+            for (int r = -suppression_radius; r <= suppression_radius; r++) {
+                for (int c = -suppression_radius; c <= suppression_radius; c++) {
+                    int sx = points[i].x + c;
+                    int sy = points[i].y + r;
+
+                    // bound checking
+                    if(sx >= sup_cols)
+                        sx = sup_cols - 1;
+                    if(sx < 0)
+                        sx = 0;
+                    if(sy >= sup_rows)
+                        sy = sup_rows - 1;
+                    if(sy < 0)
+                        sy = 0;
+
+                    maxima_suppression_img->at(sx, sy, 0) = 1;
+                }
+            }
+
+            // Convert back to original image coordinate system
+            points[i].x += 1 + m_filter_range;
+            points[i].y += 1 + m_filter_range;
+            maxima_points.push_back(points[i]);
+        }
+        i++;
+    }
+    return maxima_points;
 }

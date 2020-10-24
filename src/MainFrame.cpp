@@ -199,13 +199,29 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
                                                  views[i]->get_id(), views[i]->get_directory()), i);
     }
-    Harris harris(1, 0, true);
-    try {
-        harris.SetImage(views[0]->get_byte_image("original"));
-        harris.Process();
-    } catch (const std::exception &e) {
-        std::cout << e.what() << std::endl;
-    }
+   ////////////////////////////////////////Harris Test////////////////////////////////////////
+//    Harris harris(0.04, 1, true);
+//    try {
+//        mve::ByteImage::Ptr img = views[0]->get_byte_image("original");
+//        harris.SetImage(img);
+//        harris.Process();
+//        Harris::KeyPoints pts = harris.GetMaximaPoints(0.01, 5);
+//        wxMemoryDC dc;
+//        wxImage wximg(img->width(), img->height());
+//        memcpy(wximg.GetData(), img->get_data_pointer(), img->get_byte_size());
+//        wxBitmap bitmap = wximg;
+//        dc.SelectObject(bitmap);
+//        float max = pts[0].corner_response;
+//        for (const auto &pt : pts) {
+//            if (pt.corner_response > 0.01 * max)
+//                dc.DrawCircle(pt.x, pt.y, 2);
+//        }
+//        dc.SelectObject(wxNullBitmap);
+//        bitmap.SaveFile("test.jpg", wxBITMAP_TYPE_JPEG);
+//    } catch (const std::exception &e) {
+//        std::cout << e.what() << std::endl;
+//    }
+    ////////////////////////////////////////Harris Test////////////////////////////////////////
     for (int i = 0; i < listCtrl->GetColumnCount(); ++i)
         listCtrl->SetColumnWidth(i, -1);
 }
