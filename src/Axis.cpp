@@ -8,12 +8,12 @@ Axis::Axis(const glm::mat4 &model) : RenderTarget(model), m_VAO(0) {
     // note that the first three columns are the point position
     // the last three columnn are the colors
     float vertices[] = {
-            0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-            1.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-            0.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-            0.f, 1.f, 0.f, 0.f, 1.f, 0.f,
-            0.f, 0.f, 0.f, 0.f, 0.f, 1.f,
-            0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
+        0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+        1.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+        0.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+        0.f, 1.f, 0.f, 0.f, 1.f, 0.f,
+        0.f, 0.f, 0.f, 0.f, 0.f, 1.f,
+        0.f, 0.f, 1.f, 0.f, 0.f, 1.f};
     glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 
@@ -21,7 +21,6 @@ Axis::Axis(const glm::mat4 &model) : RenderTarget(model), m_VAO(0) {
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 
     glEnableVertexAttribArray(0);
     // in file axis.vs, there is a statement

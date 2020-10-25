@@ -90,18 +90,14 @@ void GLPanel::AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &t
 void GLPanel::OpenGLDebugMessage(gl::GLenum, gl::GLenum, gl::GLuint, gl::GLenum severity,
                                  gl::GLsizei, const gl::GLchar *message, const void *) {
     switch (severity) {
-        case gl::GL_DEBUG_SEVERITY_HIGH:
-            std::cout << "OpenGL Debug HIGH: " << message << std::endl;
-            break;
-        case gl::GL_DEBUG_SEVERITY_MEDIUM:
-            std::cout << "OpenGL Debug MEDIUM: " << message << std::endl;
-            break;
-        case gl::GL_DEBUG_SEVERITY_LOW:
-            std::cout << "OpenGL Debug LOW: " << message << std::endl;
-            break;
-        case gl::GL_DEBUG_SEVERITY_NOTIFICATION:
-            std::cout << "OpenGL Debug NOTIFICATION: " << message << std::endl;
-            break;
-        default: break;
+    case gl::GL_DEBUG_SEVERITY_HIGH:std::cout << "OpenGL Debug HIGH: " << message << std::endl;
+        break;
+    case gl::GL_DEBUG_SEVERITY_MEDIUM:std::cout << "OpenGL Debug MEDIUM: " << message << std::endl;
+        break;
+    case gl::GL_DEBUG_SEVERITY_LOW:std::cout << "OpenGL Debug LOW: " << message << std::endl;
+        break;
+    case gl::GL_DEBUG_SEVERITY_NOTIFICATION:std::cout << "OpenGL Debug NOTIFICATION: " << message << std::endl;
+        break;
+    default: break;
     }
 }

@@ -5,9 +5,9 @@
 namespace util {
 
 void GaussFilter(const mve::FloatImage::ConstPtr &img,
-                                 mve::FloatImage::Ptr &out,
-                                 int filter_range,
-                                 float sigma) {
+                 mve::FloatImage::Ptr &out,
+                 int filter_range,
+                 float sigma) {
     assert(img->channels() == 1);
 
     out = mve::FloatImage::create(img->width() - filter_range * 2, img->height() - filter_range * 2, 1);
@@ -15,10 +15,9 @@ void GaussFilter(const mve::FloatImage::ConstPtr &img,
     int k_size = filter_range * 2 + 1;
     std::vector<double> gauss_template(k_size);
     double sum = 0;
-    for (int a = 0; a < k_size; a++)
-    {
+    for (int a = 0; a < k_size; a++) {
         int x = a - filter_range;
-        double m = std::exp((-1.0f * x * x)  / (2.f * sigma * sigma));
+        double m = std::exp((-1.0f * x * x) / (2.f * sigma * sigma));
         gauss_template[a] = m;
         sum += m;
     }
@@ -31,8 +30,7 @@ void GaussFilter(const mve::FloatImage::ConstPtr &img,
 #pragma omp parallel for schedule(dynamic, 1)
         for (int x = filter_range; x < img->width() - filter_range; ++x) {
             double res = 0;
-            for (int a = -filter_range; a <= filter_range; a++)
-            {
+            for (int a = -filter_range; a <= filter_range; a++) {
                 res += gauss_template.at(a + filter_range) * img->at(x, y + a, 0);
             }
             out->at(x - filter_range, y - filter_range, 0) = res;
@@ -43,8 +41,7 @@ void GaussFilter(const mve::FloatImage::ConstPtr &img,
 #pragma omp parallel for schedule(dynamic, 1)
         for (int x = filter_range; x < img->width() - filter_range; ++x) {
             double res = 0;
-            for (int a = -filter_range; a <= filter_range; a++)
-            {
+            for (int a = -filter_range; a <= filter_range; a++) {
                 res += gauss_template.at(a + filter_range) * out->at(x - filter_range + a, y - filter_range, 0);
             }
             out->at(x - filter_range, y - filter_range, 0) = res;
@@ -69,15 +66,15 @@ void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out,
     out = mve::FloatImage::create(img->width() - 2 * filter_range, img->height() - 2 * filter_range, 1);
     mve::FloatImage::Ptr integral_img = ComputeIntegralImg(img);
     int k_size = 2 * filter_range + 1;
-    float normal = 1.f  / (k_size * k_size);
+    float normal = 1.f / (k_size * k_size);
 #pragma omp parallel for schedule(dynamic, 1)
     for (int r = filter_range + 1; r < img->height() - filter_range + 1; r++) {
 #pragma omp parallel for schedule(dynamic, 1)
-        for (int c = filter_range + 1; c < img->width() - filter_range + 1 ; c++) {
+        for (int c = filter_range + 1; c < img->width() - filter_range + 1; c++) {
             float sum = integral_img->at(c + filter_range, r + filter_range, 0)
-                    + integral_img->at(c - filter_range - 1, r - filter_range - 1, 0)
-                    - integral_img->at(c + filter_range, r - filter_range - 1, 0)
-                    - integral_img->at(c - filter_range - 1, r + filter_range, 0);
+                + integral_img->at(c - filter_range - 1, r - filter_range - 1, 0)
+                - integral_img->at(c + filter_range, r - filter_range - 1, 0)
+                - integral_img->at(c - filter_range - 1, r + filter_range, 0);
             out->at(c - filter_range - 1, r - filter_range - 1, 0) = sum * normal;
         }
     }

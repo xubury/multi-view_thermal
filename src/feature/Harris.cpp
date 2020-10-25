@@ -2,18 +2,18 @@
 #include "util.hpp"
 
 Harris::Harris(float k, int filter_range, float sigma)
-        : m_k(k), m_filter_range(filter_range), m_sigma(sigma) {
+    : m_k(k), m_filter_range(filter_range), m_sigma(sigma) {
 
 }
 
-void Harris::SetImage(const mve::ByteImage::ConstPtr& img) {
+void Harris::SetImage(const mve::ByteImage::ConstPtr &img) {
     if (img->channels() != 1 && img->channels() != 3)
         throw std::invalid_argument("Gray or color image expected");
 
     this->m_orig = mve::image::byte_to_float_image(img);
     if (img->channels() == 3) {
         this->m_orig = mve::image::desaturate<float>
-                (this->m_orig, mve::image::DESATURATE_AVERAGE);
+            (this->m_orig, mve::image::DESATURATE_AVERAGE);
     }
 }
 
@@ -94,10 +94,10 @@ void Harris::ComputeHarrisResponses() {
             a21 = m_derivatives.Ix->at(c, r, 0) * m_derivatives.Iy->at(c, r, 0);
             a12 = m_derivatives.Ix->at(c, r, 0) * m_derivatives.Iy->at(c, r, 0);
 
-            float det = a11*a22 - a12*a21;
+            float det = a11 * a22 - a12 * a21;
             float trace = a11 + a22;
 
-            m_harris_responses->at(c, r, 0) = std::abs(det - m_k * trace*trace);
+            m_harris_responses->at(c, r, 0) = std::abs(det - m_k * trace * trace);
         }
     }
 }
@@ -131,20 +131,20 @@ Harris::KeyPoints Harris::GetMaximaPoints(float percentage, int suppression_radi
         int sup_cols = maxima_suppression_img->width();
 
         // Check if point marked in maximaSuppression matrix
-        if(maxima_suppression_img->at(points[i].x, points[i].y, 0) == 0) {
+        if (maxima_suppression_img->at(points[i].x, points[i].y, 0) == 0) {
             for (int r = -suppression_radius; r <= suppression_radius; r++) {
                 for (int c = -suppression_radius; c <= suppression_radius; c++) {
                     int sx = points[i].x + c;
                     int sy = points[i].y + r;
 
                     // bound checking
-                    if(sx >= sup_cols)
+                    if (sx >= sup_cols)
                         sx = sup_cols - 1;
-                    if(sx < 0)
+                    if (sx < 0)
                         sx = 0;
-                    if(sy >= sup_rows)
+                    if (sy >= sup_rows)
                         sy = sup_rows - 1;
-                    if(sy < 0)
+                    if (sy < 0)
                         sy = 0;
 
                     maxima_suppression_img->at(sx, sy, 0) = 1;

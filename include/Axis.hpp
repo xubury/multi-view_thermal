@@ -15,5 +15,4 @@ private:
     unsigned int m_VAO;
 };
 
-
 #endif //_AXIS_HPP

@@ -24,5 +24,4 @@ private:
     std::unique_ptr<Axis> m_pAxis;
 };
 
-
 #endif //_FRUSTUM_HPP

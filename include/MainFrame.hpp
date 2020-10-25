@@ -53,5 +53,4 @@ private:
     void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
 };
 
-
 #endif //_MAIN_FRAME_HPP

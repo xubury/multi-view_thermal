@@ -56,7 +56,7 @@ private:
 template<typename T>
 inline void GLPanel::ClearObjects() {
     m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target) -> bool {
-        return dynamic_cast<T *>(target.get()) != nullptr;
+      return dynamic_cast<T *>(target.get()) != nullptr;
     }), m_targets.end());
 }
 

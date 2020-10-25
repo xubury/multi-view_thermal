@@ -7,9 +7,9 @@ using namespace gl;
 Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(0),
                                            m_pAxis(std::make_unique<Axis>(model)) {
     m_indices = {
-            0, 1, 1, 2, 2, 3, 3, 0,
-            4, 5, 5, 6, 6, 7, 7, 4,
-            0, 4, 1, 5, 2, 6, 3, 7
+        0, 1, 1, 2, 2, 3, 3, 0,
+        4, 5, 5, 6, 6, 7, 7, 4,
+        0, 4, 1, 5, 2, 6, 3, 7
     };
 
     glGenVertexArrays(1, &m_VAO);
@@ -47,14 +47,14 @@ void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &co
     float farX = farZ * tan(glm::radians(FOV) / 2);
     float farY = farX;
     m_vertices = {
-            Vertex(glm::vec3(nearX, nearY, nearZ), color),
-            Vertex(glm::vec3(-nearX, nearY, nearZ), color),
-            Vertex(glm::vec3(-nearX, -nearY, nearZ), color),
-            Vertex(glm::vec3(nearX, -nearY, nearZ), color),
-            Vertex(glm::vec3(farX, farY, farZ), color),
-            Vertex(glm::vec3(-farX, farY, farZ), color),
-            Vertex(glm::vec3(-farX, -farY, farZ), color),
-            Vertex(glm::vec3(farX, -farY, farZ), color)
+        Vertex(glm::vec3(nearX, nearY, nearZ), color),
+        Vertex(glm::vec3(-nearX, nearY, nearZ), color),
+        Vertex(glm::vec3(-nearX, -nearY, nearZ), color),
+        Vertex(glm::vec3(nearX, -nearY, nearZ), color),
+        Vertex(glm::vec3(farX, farY, farZ), color),
+        Vertex(glm::vec3(-farX, farY, farZ), color),
+        Vertex(glm::vec3(-farX, -farY, farZ), color),
+        Vertex(glm::vec3(farX, -farY, farZ), color)
     };
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m_vertices.size(), m_vertices.data(), GL_STATIC_DRAW);

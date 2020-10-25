@@ -1,10 +1,10 @@
 #include "Camera.hpp"
 
 Camera::Camera(const glm::vec3 &position, const glm::vec3 &up, float yaw, float pitch)
-        : m_position(position), m_front(glm::vec3(0.f, 0.f, -1.f)),
-          m_up(0), m_right(0), m_worldUp(up), m_yaw(yaw),
-          m_pitch(pitch), m_movementSpeed(SPEED), m_mouseSensitivity(SENSITIVITY), m_zoom(ZOOM),
-          m_screenWidth(0), m_screenHeight(0), m_type(Type::PERSPECTIVE) {
+    : m_position(position), m_front(glm::vec3(0.f, 0.f, -1.f)),
+      m_up(0), m_right(0), m_worldUp(up), m_yaw(yaw),
+      m_pitch(pitch), m_movementSpeed(SPEED), m_mouseSensitivity(SENSITIVITY), m_zoom(ZOOM),
+      m_screenWidth(0), m_screenHeight(0), m_type(Type::PERSPECTIVE) {
     UpdateCameraVectors();
 }
 
@@ -81,9 +81,9 @@ glm::mat4 Camera::GetProjection() const {
         glm::mat4 view = GetViewMatrix();
         float ratio_size_per_depth = atan(glm::radians(GetFOV() / 2.0f)) * 2.0f;
         float xFactor = (float) m_screenWidth / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) *
-                        ratio_size_per_depth;
+            ratio_size_per_depth;
         float yFactor = (float) m_screenHeight / (float) (m_screenWidth + m_screenHeight) * abs(view[3][2]) *
-                        ratio_size_per_depth;
+            ratio_size_per_depth;
         return glm::ortho(-xFactor, xFactor, -yFactor, yFactor, 0.1f, 100.0f);
     }
 }

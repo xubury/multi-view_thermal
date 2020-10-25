@@ -18,17 +18,16 @@ limit_image_size(typename mve::Image<T>::Ptr img, int max_pixels) {
 mve::ImageBase::Ptr
 limit_image_size(mve::ImageBase::Ptr image, int max_pixels) {
     switch (image->get_type()) {
-        case mve::IMAGE_TYPE_FLOAT:
-            return limit_image_size<float>(std::dynamic_pointer_cast
-                                                   <mve::FloatImage>(image), max_pixels);
-        case mve::IMAGE_TYPE_UINT8:
-            return limit_image_size<uint8_t>(std::dynamic_pointer_cast
-                                                     <mve::ByteImage>(image), max_pixels);
-        case mve::IMAGE_TYPE_UINT16:
-            return limit_image_size<uint16_t>(std::dynamic_pointer_cast
-                                                      <mve::RawImage>(image), max_pixels);
-        default:
-            break;
+    case mve::IMAGE_TYPE_FLOAT:
+        return limit_image_size<float>(std::dynamic_pointer_cast
+                                           <mve::FloatImage>(image), max_pixels);
+    case mve::IMAGE_TYPE_UINT8:
+        return limit_image_size<uint8_t>(std::dynamic_pointer_cast
+                                             <mve::ByteImage>(image), max_pixels);
+    case mve::IMAGE_TYPE_UINT16:
+        return limit_image_size<uint16_t>(std::dynamic_pointer_cast
+                                              <mve::RawImage>(image), max_pixels);
+    default:break;
     }
     return mve::ImageBase::Ptr();
 }
@@ -37,7 +36,7 @@ bool
 has_jpeg_extension(std::string const &filename) {
     std::string lcfname(util::string::lowercase(filename));
     return util::string::right(lcfname, 4) == ".jpg"
-           || util::string::right(lcfname, 5) == ".jpeg";
+        || util::string::right(lcfname, 5) == ".jpeg";
 }
 
 std::string
@@ -59,10 +58,11 @@ load_8bit_image(std::string const &fname, std::string *exif) {
         if (ext4 == ".jpg" || ext5 == ".jpeg")
             return mve::image::load_jpg_file(fname, exif);
         else if (ext4 == ".png" || ext4 == ".ppm"
-                 || ext4 == ".tif" || ext5 == ".tiff")
+            || ext4 == ".tif" || ext5 == ".tiff")
             return mve::image::load_file(fname);
     }
-    catch (...) {}
+    catch (...) {
+    }
 
     return mve::ByteImage::Ptr();
 }
@@ -78,7 +78,8 @@ load_16bit_image(std::string const &fname) {
         else if (ext4 == ".ppm")
             return mve::image::load_ppm_16_file(fname);
     }
-    catch (...) {}
+    catch (...) {
+    }
 
     return mve::RawImage::Ptr();
 }
@@ -94,7 +95,8 @@ load_float_image(std::string const &fname) {
         else if (ext4 == ".pfm")
             return mve::image::load_pfm_file(fname);
     }
-    catch (...) {}
+    catch (...) {
+    }
 
     return mve::FloatImage::Ptr();
 }
@@ -145,34 +147,33 @@ void find_min_max_percentile(typename mve::Image<T>::ConstPtr image,
 mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
     mve::ByteImage::Ptr image;
     switch (img->get_type()) {
-        case mve::IMAGE_TYPE_UINT8:
-            image = mve::image::create_thumbnail<uint8_t>
-                    (std::dynamic_pointer_cast<mve::ByteImage const>(img),
-                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-            break;
+    case mve::IMAGE_TYPE_UINT8:
+        image = mve::image::create_thumbnail<uint8_t>
+            (std::dynamic_pointer_cast<mve::ByteImage const>(img),
+             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+        break;
 
-        case mve::IMAGE_TYPE_UINT16: {
-            mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
-                    (std::dynamic_pointer_cast<mve::RawImage const>(img),
-                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-            uint16_t vmin, vmax;
-            find_min_max_percentile(temp, &vmin, &vmax);
-            image = mve::image::raw_to_byte_image(temp, vmin, vmax);
-            break;
-        }
+    case mve::IMAGE_TYPE_UINT16: {
+        mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
+            (std::dynamic_pointer_cast<mve::RawImage const>(img),
+             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+        uint16_t vmin, vmax;
+        find_min_max_percentile(temp, &vmin, &vmax);
+        image = mve::image::raw_to_byte_image(temp, vmin, vmax);
+        break;
+    }
 
-        case mve::IMAGE_TYPE_FLOAT: {
-            mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
-                    (std::dynamic_pointer_cast<mve::FloatImage const>(img),
-                     THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-            float vmin, vmax;
-            find_min_max_percentile(temp, &vmin, &vmax);
-            image = mve::image::float_to_byte_image(temp, vmin, vmax);
-            break;
-        }
+    case mve::IMAGE_TYPE_FLOAT: {
+        mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
+            (std::dynamic_pointer_cast<mve::FloatImage const>(img),
+             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
+        float vmin, vmax;
+        find_min_max_percentile(temp, &vmin, &vmax);
+        image = mve::image::float_to_byte_image(temp, vmin, vmax);
+        break;
+    }
 
-        default:
-            return mve::ByteImage::Ptr();
+    default:return mve::ByteImage::Ptr();
     }
 
     return image;
@@ -226,7 +227,7 @@ int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, const mvs::Settings &
     if (view == nullptr)
         return 0;
 
-    mve::View::ImageProxy const* proxy = view->get_image_proxy(mvs.imageEmbedding);
+    mve::View::ImageProxy const *proxy = view->get_image_proxy(mvs.imageEmbedding);
     if (proxy == nullptr)
         return 0;
 

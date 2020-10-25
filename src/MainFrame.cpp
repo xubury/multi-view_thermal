@@ -105,7 +105,8 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
 
             m_pGLPanel->ClearObjects<Frustum>();
             for (const auto &view : m_pScene->get_views()) {
-                if (!view->is_camera_valid()) continue;
+                if (!view->is_camera_valid())
+                    continue;
 
                 glm::mat4 trans;
                 view->get_camera().fill_cam_to_world(&trans[0].x);
@@ -113,7 +114,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
                 m_pGLPanel->AddCameraFrustum(trans);
             }
         } catch (const std::exception &e) {
-            std::cout << "Error opening bundle file: "<< e.what() << std::endl;
+            std::cout << "Error opening bundle file: " << e.what() << std::endl;
         }
 
         SetStatusText(aPath);
@@ -146,7 +147,6 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
             return;
         }
         std::cout << "Found " << dir.size() << " directory entries" << std::endl;
-
 
         std::sort(dir.begin(), dir.end());
         std::atomic_int id_cnt(0);
@@ -231,7 +231,7 @@ void MainFrame::DisplaySceneImage(const std::string &image_name, const ImageList
         listCtrl->InsertItem(i, wxString::Format("ID :%d Dir:%s",
                                                  views[i]->get_id(), views[i]->get_directory()), i);
     }
-   ////////////////////////////////////////Harris Test////////////////////////////////////////
+    ////////////////////////////////////////Harris Test////////////////////////////////////////
 //    Harris harris(0.04, 3, 1);
 //    try {
 //        mve::ByteImage::Ptr img = views[0]->get_byte_image("original");
@@ -438,7 +438,6 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
               << " ms." << std::endl;
 
-
     std::cout << "Normalizing scene..." << std::endl;
     incremental.normalize_scene();
 
@@ -476,12 +475,12 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
 
         /* Undistort image. */
         mve::ByteImage::Ptr original
-                = view->get_byte_image(ORIGINAL_IMAGE_NAME);
+            = view->get_byte_image(ORIGINAL_IMAGE_NAME);
         if (original == nullptr)
             continue;
         mve::ByteImage::Ptr undist
-                = mve::image::image_undistort_k2k4<uint8_t>
-                        (original, cam.flen, cam.dist[0], cam.dist[1]);
+            = mve::image::image_undistort_k2k4<uint8_t>
+                (original, cam.flen, cam.dist[0], cam.dist[1]);
         view->set_image(undist, UNDISTORTED_IMAGE_NAME);
 
 #pragma omp critical
@@ -506,7 +505,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     util::WallTimer timer;
     mvs::Settings settings;
     settings.scale = get_scale_from_max_pixel(m_pScene, settings);
-    mve::Scene::ViewList& views(m_pScene->get_views());
+    mve::Scene::ViewList &views(m_pScene->get_views());
     if (views.empty()) {
         event.Skip();
         return;
@@ -520,18 +519,16 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
             settings.refViewNr = id;
 
             std::string embedding_name = "depth-L"
-                                         + util::string::get(settings.scale);
+                + util::string::get(settings.scale);
             if (views[id]->has_image(embedding_name))
                 continue;
 
-            try
-            {
+            try {
                 mvs::DMRecon recon(m_pScene, settings);
                 recon.start();
                 views[id]->save_view();
             }
-            catch (std::exception &err)
-            {
+            catch (std::exception &err) {
                 std::cerr << err.what() << std::endl;
             }
         }
@@ -542,6 +539,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     m_pScene->save_views();
     event.Skip();
 }
+
 void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
     if (m_pScene == nullptr) {
         event.Skip();
@@ -554,26 +552,25 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
     else {
         /* Prepare output mesh. */
         point_set = mve::TriangleMesh::create();
-        mve::TriangleMesh::VertexList& verts(point_set->get_vertices());
-        mve::TriangleMesh::NormalList& vnorm(point_set->get_vertex_normals());
-        mve::TriangleMesh::ColorList& vcolor(point_set->get_vertex_colors());
-        mve::TriangleMesh::ValueList& vvalues(point_set->get_vertex_values());
-        mve::TriangleMesh::ConfidenceList& vconfs(point_set->get_vertex_confidences());
+        mve::TriangleMesh::VertexList &verts(point_set->get_vertices());
+        mve::TriangleMesh::NormalList &vnorm(point_set->get_vertex_normals());
+        mve::TriangleMesh::ColorList &vcolor(point_set->get_vertex_colors());
+        mve::TriangleMesh::ValueList &vvalues(point_set->get_vertex_values());
+        mve::TriangleMesh::ConfidenceList &vconfs(point_set->get_vertex_confidences());
 
         /* Iterate over views and get points. */
-        mve::Scene::ViewList& views(m_pScene->get_views());
+        mve::Scene::ViewList &views(m_pScene->get_views());
 
         mvs::Settings settings;
         int scale = get_scale_from_max_pixel(m_pScene, settings);
 
 #pragma omp parallel for schedule(dynamic)
-        for (std::size_t i = 0; i < views.size(); ++i)
-        {
+        for (std::size_t i = 0; i < views.size(); ++i) {
             mve::View::Ptr view = views[i];
             if (view == nullptr)
                 continue;
 
-            mve::CameraInfo const& cam = view->get_camera();
+            mve::CameraInfo const &cam = view->get_camera();
             if (cam.flen == 0.0f)
                 continue;
 
@@ -582,7 +579,7 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
                 continue;
 
             mve::ByteImage::Ptr ci;
-            if(scale != 0)
+            if (scale != 0)
                 ci = view->get_byte_image("undist-L" + std::to_string(scale));
             else
                 ci = view->get_byte_image("undistorted");
@@ -598,19 +595,18 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
             mve::Image<unsigned int> vertex_ids;
             mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids);
 
-            mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
-            mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
-            mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
-            mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+            mve::TriangleMesh::VertexList const &mverts(mesh->get_vertices());
+            mve::TriangleMesh::NormalList const &mnorms(mesh->get_vertex_normals());
+            mve::TriangleMesh::ColorList const &mvcol(mesh->get_vertex_colors());
+            mve::TriangleMesh::ConfidenceList &mconfs(mesh->get_vertex_confidences());
 
             mesh->ensure_normals();
             mve::geom::depthmap_mesh_confidences(mesh, 4);
             std::vector<float> mvscale;
             mvscale.resize(mverts.size(), 0.0f);
             mve::MeshInfo mesh_info(mesh);
-            for (std::size_t j = 0; j < mesh_info.size(); ++j)
-            {
-                mve::MeshInfo::VertexInfo const& vinf = mesh_info[j];
+            for (std::size_t j = 0; j < mesh_info.size(); ++j) {
+                mve::MeshInfo::VertexInfo const &vinf = mesh_info[j];
                 for (std::size_t k = 0; k < vinf.verts.size(); ++k)
                     mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
                 mvscale[j] /= static_cast<float>(vinf.verts.size());

@@ -6,9 +6,9 @@
 namespace util {
 
 void GaussFilter(const mve::FloatImage::ConstPtr &img,
-                                 mve::FloatImage::Ptr &out,
-                                 int filter_range,
-                                 float sigma);
+                 mve::FloatImage::Ptr &out,
+                 int filter_range,
+                 float sigma);
 
 mve::FloatImage::Ptr ComputeIntegralImg(const mve::FloatImage::ConstPtr &img);
 

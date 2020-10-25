@@ -19,5 +19,4 @@ private:
     std::vector<Vertex> m_vertices;
 };
 
-
 #endif //_CLUSTER_HPP

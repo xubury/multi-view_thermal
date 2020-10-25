@@ -11,7 +11,6 @@ Cluster::Cluster(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * m_vertices.size(), m_vertices.data(), GL_STATIC_DRAW);
 
-
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) nullptr);
     glEnableVertexAttribArray(1);
