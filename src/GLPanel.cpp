@@ -13,6 +13,7 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
     gl::glDebugMessageCallback(&GLPanel::OpenGLDebugMessage, nullptr);
     gl::glEnable(gl::GLenum::GL_DEBUG_OUTPUT);
     gl::glEnable(gl::GLenum::GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glEnable(GL_DEPTH_TEST);
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
 

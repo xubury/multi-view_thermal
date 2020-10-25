@@ -96,12 +96,13 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             mve::Bundle::Ptr bundle = mve::load_mve_bundle(util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
             std::vector<Vertex> vertices(bundle->get_features().size());
             mve::Bundle::Features &features = bundle->get_features();
+            m_pGLPanel->ClearObjects<Cluster>();
             for (std::size_t i = 0; i < vertices.size(); ++i) {
                 vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
                 vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
-                m_pGLPanel->ClearObjects<Cluster>();
-                m_pGLPanel->AddCluster(vertices);
             }
+            m_pGLPanel->AddCluster(vertices);
+
             m_pGLPanel->ClearObjects<Frustum>();
             for (const auto &view : m_pScene->get_views()) {
                 if (!view->is_camera_valid()) continue;
@@ -627,6 +628,13 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
         ci.reset();
         view->cache_cleanup();
     }
+    std::vector<Vertex> vertices(verts.size());
+    m_pGLPanel->ClearObjects<Cluster>();
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i].Position = glm::vec3(verts[i][0], verts[i][1], verts[i][2]);
+        vertices[i].Color = glm::vec3(vcolor[i][0], vcolor[i][1], vcolor[i][2]);
+    }
+    m_pGLPanel->AddCluster(vertices);
     /* Write mesh to disc. */
     std::cout << "Writing final point set ("
               << verts.size() << " points)..." << std::endl;
