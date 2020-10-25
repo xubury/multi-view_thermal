@@ -42,6 +42,8 @@ private:
 
     void OnMenuDepthRecon(wxCommandEvent &event);
 
+    void OnMenuDensePointRecon(wxCommandEvent &event);
+
     ImageList m_originalImageList;
 
     GLPanel *m_pGLPanel;
