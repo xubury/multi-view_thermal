@@ -29,6 +29,8 @@ public:
 
     void Transform(const glm::mat4 &transform);
 
+    glm::mat4 GetTransform();
+
     glm::vec3 GetPosition();
 
     virtual void DrawArray() = 0;
@@ -52,6 +54,10 @@ T *RenderTarget::As() {
 
 inline glm::vec3 RenderTarget::GetPosition() {
     return m_model[3];
+}
+
+inline glm::mat4 RenderTarget::GetTransform() {
+    return m_model;
 }
 
 #endif //_RENDER_TARGET_HPP

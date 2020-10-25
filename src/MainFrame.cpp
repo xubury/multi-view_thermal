@@ -447,11 +447,11 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
     std::vector<Vertex> vertices(bundle->get_features().size());
     mve::Bundle::Features &features = bundle->get_features();
+    m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
         vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
     }
-    m_pGLPanel->ClearObjects<Cluster>();
     m_pGLPanel->AddCluster(vertices);
 
     /* Apply bundle cameras to views. */
@@ -643,12 +643,16 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
     mve::TriangleMesh::VertexList &v_pos(point_set->get_vertices());
     mve::TriangleMesh::ColorList &v_color(point_set->get_vertex_colors());
     std::vector<Vertex> vertices(v_pos.size());
+    glm::mat4 transform(1.0f);
+    if (!m_pGLPanel->GetTargetList().empty()) {
+        transform = m_pGLPanel->GetTargetList().back()->GetTransform();
+    }
     m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
-    m_pGLPanel->AddCluster(vertices);
+    m_pGLPanel->AddCluster(vertices, transform);
 
     event.Skip();
 }

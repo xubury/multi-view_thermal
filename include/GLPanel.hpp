@@ -22,13 +22,15 @@ public:
 
     void AddCameraFrustum(const glm::mat4 &transform);
 
-    void AddCluster(const std::vector<Vertex> &vertices);
+    void AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform = glm::mat4(1.0f));
 
     template<typename T>
     void ClearObjects();
 
     static void OpenGLDebugMessage(gl::GLenum source, gl::GLenum type, gl::GLuint id, gl::GLenum severity,
                                    gl::GLsizei length, const gl::GLchar *message, const void *userdata);
+
+    std::vector<RenderTarget::Ptr> GetTargetList();
 private:
     void OnRender(wxPaintEvent &event);
 
@@ -56,6 +58,10 @@ inline void GLPanel::ClearObjects() {
     m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target) -> bool {
         return dynamic_cast<T *>(target.get()) != nullptr;
     }), m_targets.end());
+}
+
+inline std::vector<RenderTarget::Ptr> GLPanel::GetTargetList() {
+    return m_targets;
 }
 
 #endif //_GL_PANEL_HPP
