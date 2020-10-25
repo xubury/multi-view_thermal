@@ -653,6 +653,7 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
     m_pGLPanel->AddCluster(vertices, transform);
+    Refresh();
 
     event.Skip();
 }
