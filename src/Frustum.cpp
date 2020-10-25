@@ -5,7 +5,7 @@
 using namespace gl;
 
 Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(0),
-                                           m_pAxis(std::make_unique<Axis>(model)) {
+                                           m_pAxis(RenderTarget::Create<Axis>(model)) {
     m_indices = {
         0, 1, 1, 2, 2, 3, 3, 0,
         4, 5, 5, 6, 6, 7, 7, 4,
@@ -34,11 +34,14 @@ Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
     SetFrustum(0, 1, 45, glm::vec3(0.8f));
 }
 
-void Frustum::DrawArray() {
+void Frustum::DrawArray(const Shader &shader) {
+    shader.use();
+    shader.setMat4f("model", GetTransform());
     glBindVertexArray(m_VAO);
     glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
-    m_pAxis->As<RenderTarget>()->DrawArray();
+    m_pAxis->SetTransform(GetTransform());
+    m_pAxis->DrawArray(shader);
 }
 
 void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &color) {

@@ -10,7 +10,7 @@ public:
     explicit Axis(const glm::mat4 &model);
 
 private:
-    void DrawArray() override;
+    void DrawArray(const Shader &shader) override;
 
     unsigned int m_VAO;
 };

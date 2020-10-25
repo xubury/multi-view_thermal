@@ -47,9 +47,10 @@ Axis::Axis(const glm::mat4 &model) : RenderTarget(model), m_VAO(0) {
     glBindVertexArray(0);
 }
 
-void Axis::DrawArray() {
+void Axis::DrawArray(const Shader &shader) {
+    shader.use();
+    shader.setMat4f("model", GetTransform());
     glBindVertexArray(m_VAO);
-    // the last parameter of glDrawArrays has to be the number of vertices
     glDrawArrays(GL_LINES, 0, 6);
     glBindVertexArray(0);
 }

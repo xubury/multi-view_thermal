@@ -29,11 +29,13 @@ public:
 
     void Transform(const glm::mat4 &transform);
 
+    void SetTransform(const glm::mat4 &transform);
+
     glm::mat4 GetTransform();
 
     glm::vec3 GetPosition();
 
-    virtual void DrawArray() = 0;
+    virtual void DrawArray(const Shader &shader) = 0;
 
 private:
     glm::mat4 m_model;
@@ -54,6 +56,9 @@ T *RenderTarget::As() {
 
 inline glm::vec3 RenderTarget::GetPosition() {
     return m_model[3];
+}
+inline void RenderTarget::SetTransform(const glm::mat4 &transform) {
+    m_model = transform;
 }
 
 inline glm::mat4 RenderTarget::GetTransform() {

@@ -12,7 +12,7 @@ public:
     void SetCluster(const std::vector<Vertex> &vertices);
 
 private:
-    void DrawArray() override;
+    void DrawArray(const Shader &shader) override;
 
     unsigned int m_VAO;
     unsigned int m_VBO;

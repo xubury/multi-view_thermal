@@ -19,7 +19,9 @@ Cluster::Cluster(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
     glBindVertexArray(0);
 }
 
-void Cluster::DrawArray() {
+void Cluster::DrawArray(const Shader &shader) {
+    shader.use();
+    shader.setMat4f("model", GetTransform());
     glBindVertexArray(m_VAO);
     glDrawArrays(GL_POINTS, 0, m_vertices.size());
     glBindVertexArray(0);

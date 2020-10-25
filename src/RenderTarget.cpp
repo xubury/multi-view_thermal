@@ -8,8 +8,7 @@ void RenderTarget::Render(const Shader &shader, const Camera &camera) {
     shader.use();
     shader.setMat4f("projection", camera.GetProjection());
     shader.setMat4f("view", camera.GetViewMatrix());
-    shader.setMat4f("model", m_model);
-    DrawArray();
+    DrawArray(shader);
 }
 
 void RenderTarget::Transform(const glm::mat4 &transform) {
