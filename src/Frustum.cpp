@@ -31,7 +31,7 @@ Frustum::Frustum(const glm::mat4 &model) : RenderTarget(model), m_VAO(0), m_VBO(
 
     glBindVertexArray(0);
 
-    SetFrustum(0.3, 1, 45, glm::vec3(0.8f));
+    SetFrustum(0, 1, 45, glm::vec3(0.8f));
 }
 
 void Frustum::DrawArray() {
