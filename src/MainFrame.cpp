@@ -438,9 +438,6 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     std::cout << "SfM reconstruction took " << timer.get_elapsed()
               << " ms." << std::endl;
 
-    std::cout << "Normalizing scene..." << std::endl;
-    incremental.normalize_scene();
-
     std::cout << "Creating bundle data structure..." << std::endl;
     mve::Bundle::Ptr bundle = incremental.create_bundle();
     mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
