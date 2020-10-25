@@ -547,98 +547,108 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
         event.Skip();
         return;
     }
-    /* Prepare output mesh. */
-    mve::TriangleMesh::Ptr pset(mve::TriangleMesh::create());
-    mve::TriangleMesh::VertexList& verts(pset->get_vertices());
-    mve::TriangleMesh::NormalList& vnorm(pset->get_vertex_normals());
-    mve::TriangleMesh::ColorList& vcolor(pset->get_vertex_colors());
-    mve::TriangleMesh::ValueList& vvalues(pset->get_vertex_values());
-    mve::TriangleMesh::ConfidenceList& vconfs(pset->get_vertex_confidences());
+    std::string ply_path = util::fs::join_path(m_pScene->get_path(), "point-set.ply");
+    mve::TriangleMesh::Ptr point_set;
+    if (util::fs::file_exists(ply_path.c_str())) // skip point set reconstruction if ply is found
+        point_set = mve::geom::load_ply_mesh(ply_path);
+    else {
+        /* Prepare output mesh. */
+        point_set = mve::TriangleMesh::create();
+        mve::TriangleMesh::VertexList& verts(point_set->get_vertices());
+        mve::TriangleMesh::NormalList& vnorm(point_set->get_vertex_normals());
+        mve::TriangleMesh::ColorList& vcolor(point_set->get_vertex_colors());
+        mve::TriangleMesh::ValueList& vvalues(point_set->get_vertex_values());
+        mve::TriangleMesh::ConfidenceList& vconfs(point_set->get_vertex_confidences());
 
-    /* Iterate over views and get points. */
-    mve::Scene::ViewList& views(m_pScene->get_views());
+        /* Iterate over views and get points. */
+        mve::Scene::ViewList& views(m_pScene->get_views());
 
-    mvs::Settings settings;
-    int scale = get_scale_from_max_pixel(m_pScene, settings);
+        mvs::Settings settings;
+        int scale = get_scale_from_max_pixel(m_pScene, settings);
 
 #pragma omp parallel for schedule(dynamic)
-    for (std::size_t i = 0; i < views.size(); ++i)
-    {
-        mve::View::Ptr view = views[i];
-        if (view == nullptr)
-            continue;
+        for (std::size_t i = 0; i < views.size(); ++i)
+        {
+            mve::View::Ptr view = views[i];
+            if (view == nullptr)
+                continue;
 
-        mve::CameraInfo const& cam = view->get_camera();
-        if (cam.flen == 0.0f)
-            continue;
+            mve::CameraInfo const& cam = view->get_camera();
+            if (cam.flen == 0.0f)
+                continue;
 
-        mve::FloatImage::Ptr dm = view->get_float_image("depth-L" + std::to_string(scale));
-        if (dm == nullptr)
-            continue;
+            mve::FloatImage::Ptr dm = view->get_float_image("depth-L" + std::to_string(scale));
+            if (dm == nullptr)
+                continue;
 
-        mve::ByteImage::Ptr ci;
-        if(scale != 0)
-            ci = view->get_byte_image("undist-L" + std::to_string(scale));
-        else
-            ci = view->get_byte_image("undistorted");
+            mve::ByteImage::Ptr ci;
+            if(scale != 0)
+                ci = view->get_byte_image("undist-L" + std::to_string(scale));
+            else
+                ci = view->get_byte_image("undistorted");
 
 #pragma omp critical
-        std::cout << "Processing view \"" << view->get_name()
-                  << "\"" << (ci != nullptr ? " (with colors)" : "")
-                  << "..." << std::endl;
+            std::cout << "Processing view \"" << view->get_name()
+                      << "\"" << (ci != nullptr ? " (with colors)" : "")
+                      << "..." << std::endl;
 
-        /* Triangulate depth map. */
-        mve::TriangleMesh::Ptr mesh;
+            /* Triangulate depth map. */
+            mve::TriangleMesh::Ptr mesh;
 
-        mve::Image<unsigned int> vertex_ids;
-        mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids);
+            mve::Image<unsigned int> vertex_ids;
+            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids);
 
-        mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
-        mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
-        mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
-        mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
+            mve::TriangleMesh::VertexList const& mverts(mesh->get_vertices());
+            mve::TriangleMesh::NormalList const& mnorms(mesh->get_vertex_normals());
+            mve::TriangleMesh::ColorList const& mvcol(mesh->get_vertex_colors());
+            mve::TriangleMesh::ConfidenceList& mconfs(mesh->get_vertex_confidences());
 
-        mesh->ensure_normals();
-        mve::geom::depthmap_mesh_confidences(mesh, 4);
-        std::vector<float> mvscale;
-        mvscale.resize(mverts.size(), 0.0f);
-        mve::MeshInfo mesh_info(mesh);
-        for (std::size_t j = 0; j < mesh_info.size(); ++j)
-        {
-            mve::MeshInfo::VertexInfo const& vinf = mesh_info[j];
-            for (std::size_t k = 0; k < vinf.verts.size(); ++k)
-                mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
-            mvscale[j] /= static_cast<float>(vinf.verts.size());
-            mvscale[j] *= scale;
-        }
+            mesh->ensure_normals();
+            mve::geom::depthmap_mesh_confidences(mesh, 4);
+            std::vector<float> mvscale;
+            mvscale.resize(mverts.size(), 0.0f);
+            mve::MeshInfo mesh_info(mesh);
+            for (std::size_t j = 0; j < mesh_info.size(); ++j)
+            {
+                mve::MeshInfo::VertexInfo const& vinf = mesh_info[j];
+                for (std::size_t k = 0; k < vinf.verts.size(); ++k)
+                    mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
+                mvscale[j] /= static_cast<float>(vinf.verts.size());
+                mvscale[j] *= scale;
+            }
 
 #pragma omp critical
-        {
-            verts.insert(verts.end(), mverts.begin(), mverts.end());
-            if (!mvcol.empty())
-                vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-            if (!mnorms.empty())
-                vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
-            if (!mvscale.empty())
-                vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
-            if (!mconfs.empty())
-                vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+            {
+                verts.insert(verts.end(), mverts.begin(), mverts.end());
+                if (!mvcol.empty())
+                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
+                if (!mnorms.empty())
+                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+                if (!mvscale.empty())
+                    vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
+                if (!mconfs.empty())
+                    vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+            }
+            dm.reset();
+            ci.reset();
+            view->cache_cleanup();
         }
-        dm.reset();
-        ci.reset();
-        view->cache_cleanup();
+        /* Write mesh to disc. */
+        std::cout << "Writing final point set ("
+                  << verts.size() << " points)..." << std::endl;
+        mve::geom::save_mesh(point_set, util::fs::join_path(m_pScene->get_path(), "point-set.ply"));
     }
-    std::vector<Vertex> vertices(verts.size());
+
+    // display cluster
+    mve::TriangleMesh::VertexList &v_pos(point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(point_set->get_vertex_colors());
+    std::vector<Vertex> vertices(v_pos.size());
     m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
-        vertices[i].Position = glm::vec3(verts[i][0], verts[i][1], verts[i][2]);
-        vertices[i].Color = glm::vec3(vcolor[i][0], vcolor[i][1], vcolor[i][2]);
+        vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
     m_pGLPanel->AddCluster(vertices);
-    /* Write mesh to disc. */
-    std::cout << "Writing final point set ("
-              << verts.size() << " points)..." << std::endl;
-    mve::geom::save_mesh(pset, "point-set.ply");
 
     event.Skip();
 }
