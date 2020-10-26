@@ -59,7 +59,7 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
-    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Reconstruction"));
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Map Generation"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON);
     pOperateMenu->Append(MENU::MENU_PSET_RECON, _("Dense Point Cloud Reconstruction"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDensePointRecon, this, MENU::MENU_PSET_RECON);
