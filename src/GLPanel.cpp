@@ -17,7 +17,7 @@ GLPanel::GLPanel(wxWindow *parent, wxWindowID win_id, int *displayAttrs,
 
     m_pShader = Shader::Create("vertex.glsl", "fragment.glsl");
 
-    m_pCamera = Camera::Create(glm::vec3(0, 0, 45.f));
+    m_pCamera = Camera::Create(glm::vec3(0, 0, -45.f), glm::vec3(0, 0, 1));
     m_pCamera->SetCameraType(Camera::Type::ORTHODOX);
     m_pCamera->SetScreenSize(GetSize().GetWidth(), GetSize().GetHeight());
 

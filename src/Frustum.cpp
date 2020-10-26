@@ -49,6 +49,7 @@ void Frustum::SetFrustum(float nearZ, float farZ, float FOV, const glm::vec3 &co
     float nearY = nearX;
     float farX = farZ * tan(glm::radians(FOV) / 2);
     float farY = farX;
+    farZ = -farZ;
     m_vertices = {
         Vertex(glm::vec3(nearX, nearY, nearZ), color),
         Vertex(glm::vec3(-nearX, nearY, nearZ), color),

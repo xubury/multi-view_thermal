@@ -23,6 +23,7 @@
 #include "mve/mesh_tools.h"
 #include "Image.hpp"
 #include "feature/Harris.hpp"
+#include "Util.hpp"
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
                      const wxSize &size) : wxFrame(parent, id, title, pos, size) {
@@ -110,7 +111,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
 
                 glm::mat4 trans;
                 view->get_camera().fill_cam_to_world(&trans[0].x);
-                trans = glm::transpose(trans);
+                trans = util::MveToGLMatrix(trans);
                 m_pGLPanel->AddCameraFrustum(trans);
             }
         } catch (const std::exception &e) {
@@ -489,7 +490,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     for (const auto &view : views) {
         glm::mat4 trans;
         view->get_camera().fill_cam_to_world(&trans[0].x);
-        trans = glm::transpose(trans);
+        trans = util::MveToGLMatrix(trans);
         m_pGLPanel->AddCameraFrustum(trans);
     }
 }
@@ -638,7 +639,12 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
     std::vector<Vertex> vertices(v_pos.size());
     glm::mat4 transform(1.0f);
     if (!m_pGLPanel->GetTargetList().empty()) {
-        transform = m_pGLPanel->GetTargetList().back()->GetTransform();
+        for (const auto &obj : m_pGLPanel->GetTargetList()) {
+            if (obj->As<Cluster>() != nullptr) {
+                transform = obj->GetTransform();
+                break;
+            }
+        }
     }
     m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {

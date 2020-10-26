@@ -1,8 +1,16 @@
 #include <Image.hpp>
-#include "util.hpp"
+#include "Util.hpp"
 #include <algorithm>
 
 namespace util {
+
+glm::mat4 MveToGLMatrix(const glm::mat4 &matrix) {
+    glm::mat4 out;
+    out = glm::transpose(matrix);
+    out[1] = -out[1];
+    out[2] = -out[2];
+    return out;
+}
 
 void GaussFilter(const mve::FloatImage::ConstPtr &img,
                  mve::FloatImage::Ptr &out,

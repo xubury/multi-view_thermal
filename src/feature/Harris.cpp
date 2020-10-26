@@ -1,5 +1,5 @@
 #include "feature/Harris.hpp"
-#include "util.hpp"
+#include "Util.hpp"
 
 Harris::Harris(float k, int filter_range, float sigma)
     : m_k(k), m_filter_range(filter_range), m_sigma(sigma) {
