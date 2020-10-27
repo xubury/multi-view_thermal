@@ -524,7 +524,6 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
             try {
                 mvs::DMRecon recon(m_pScene, settings);
                 recon.start();
-                views[id]->save_view();
             }
             catch (std::exception &err) {
                 std::cerr << err.what() << std::endl;
@@ -599,7 +598,9 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
             mve::TriangleMesh::ConfidenceList &mconfs(mesh->get_vertex_confidences());
 
             mesh->ensure_normals();
-            mve::geom::depthmap_mesh_confidences(mesh, 4);
+
+            mve::geom::depthmap_mesh_confidences(mesh, 3);
+
             std::vector<float> mvscale;
             mvscale.resize(mverts.size(), 0.0f);
             mve::MeshInfo mesh_info(mesh);
@@ -628,9 +629,13 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
             view->cache_cleanup();
         }
         /* Write mesh to disc. */
+        mve::geom::SavePLYOptions opts;
+        opts.write_vertex_normals = true;
+        opts.write_vertex_values = true;
+        opts.write_vertex_confidences = true;
         std::cout << "Writing final point set ("
                   << verts.size() << " points)..." << std::endl;
-        mve::geom::save_mesh(point_set, util::fs::join_path(m_pScene->get_path(), "point-set.ply"));
+        mve::geom::save_ply_mesh(point_set, util::fs::join_path(m_pScene->get_path(), "point-set.ply"), opts);
     }
 
     // display cluster

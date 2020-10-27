@@ -57,7 +57,7 @@ void GLPanel::OnMouseMove(wxMouseEvent &event) {
     float y_offset = (float) m_lastMouse.y - (float) mouse.y;
     glm::mat4 transform(1.0f);
     if (event.ButtonIsDown(wxMOUSE_BTN_LEFT)) {
-        transform = m_pCamera->CalculateRotateFromView(x_offset, y_offset);
+        transform = m_pCamera->CalculateRotateFromView(x_offset * 0.2f, y_offset * 0.2f);
     } else if (event.ButtonIsDown(wxMOUSE_BTN_RIGHT)) {
         transform = m_pCamera->CalculateTranslateFromView(x_offset, y_offset);
     }
