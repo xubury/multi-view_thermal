@@ -584,7 +584,6 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
         return;
     }
     util::WallTimer total_timer;
-    int scale = get_scale_from_max_pixel(m_pScene);
     mve::Scene::ViewList &views(m_pScene->get_views());
     if (views.empty()) {
         event.Skip();
@@ -610,6 +609,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
             view->reload_view();
         }
         std::string input_name;
+        int scale = get_scale_from_max_pixel(m_pScene, 0);
         if (scale > 0)
             input_name = "undist-L" + util::string::get(scale);
         else
@@ -742,7 +742,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
             int const i = reconstruction_list[v];
             results.emplace_back(thread_pool.add_task(
                 [v, i, &views, &counter_mutex, &input_name, &output_name,
-                    &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts, &scale,
+                    &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
                     this] {
                   smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, false, false);
                   mve::Scene::ViewList neighbors = view_neighbors[v];
@@ -831,8 +831,6 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
         return;
     }
     util::WallTimer timer;
-    mvs::Settings settings;
-    int scale = get_scale_from_max_pixel(m_pScene);
     mve::Scene::ViewList &views(m_pScene->get_views());
     if (views.empty()) {
         event.Skip();
@@ -843,6 +841,9 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
             if (views[id] == nullptr || !views[id]->is_camera_valid())
                 continue;
 
+            int scale = get_scale_from_max_pixel(m_pScene, id);
+            mvs::Settings settings;
+            settings.scale = scale;
             /* Setup MVS. */
             settings.refViewNr = id;
 
@@ -888,6 +889,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
             if (cam.flen == 0.0f)
                 continue;
 
+            int scale = get_scale_from_max_pixel(m_pScene, i);
             mve::FloatImage::Ptr dm = view->get_float_image("depth-L" + std::to_string(scale));
             if (dm == nullptr)
                 continue;
