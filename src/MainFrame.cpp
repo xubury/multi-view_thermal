@@ -526,7 +526,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
     }
     std::string input_name;
     int scale = get_scale_from_max_pixel(m_pScene, 0);
-    if (scale > 0)
+    if (scale != 0)
         input_name = "undist-L" + util::string::get(scale);
     else
         input_name = UNDISTORTED_IMAGE_NAME;
