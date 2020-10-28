@@ -20,7 +20,6 @@
 #include "mve/mesh_info.h"
 #include "mve/mesh_io.h"
 #include "mve/mesh_io_ply.h"
-#include "mve/mesh_tools.h"
 #include "Image.hpp"
 #include "Util.hpp"
 
@@ -186,7 +185,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
                 vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
                 vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
             }
-            m_pGLPanel->AddCluster(vertices);
+            m_pCluster = m_pGLPanel->AddCluster(vertices);
 
             m_pGLPanel->ClearObjects<Frustum>();
             for (const auto &view : m_pScene->get_views()) {
@@ -533,7 +532,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
         vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
         vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
     }
-    m_pGLPanel->AddCluster(vertices);
+    m_pCluster = m_pGLPanel->AddCluster(vertices);
 
     /* Apply bundle cameras to views. */
     mve::Bundle::Cameras const &bundle_cams = bundle->get_cameras();
@@ -804,27 +803,23 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
                   << total_timer.get_elapsed() << "ms." << std::endl;
         std::cout << "Saving views back to disc..." << std::endl;
         m_pScene->save_views();
-        mve::TriangleMesh::Ptr mesh = generate_mesh(m_pScene, input_name, output_name, false);
+        m_point_set = generate_mesh(m_pScene, input_name, output_name, false);
 
         // display cluster
-        mve::TriangleMesh::VertexList &v_pos(mesh->get_vertices());
-        mve::TriangleMesh::ColorList &v_color(mesh->get_vertex_colors());
+        mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+        mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
         std::vector<Vertex> vertices(v_pos.size());
         glm::mat4 transform(1.0f);
-        if (!m_pGLPanel->GetTargetList().empty()) {
-            for (const auto &obj : m_pGLPanel->GetTargetList()) {
-                if (obj->As<Cluster>() != nullptr) {
-                    transform = obj->GetTransform();
-                    break;
-                }
-            }
+        // inherit cluster's transform
+        if (m_pCluster != nullptr) {
+            transform = m_pCluster->GetTransform();
         }
         m_pGLPanel->ClearObjects<Cluster>();
         for (std::size_t i = 0; i < vertices.size(); ++i) {
             vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
             vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
         }
-        m_pGLPanel->AddCluster(vertices, transform);
+        m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
         Refresh();
         event.Skip();
     }
@@ -958,6 +953,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
         std::cout << "Writing final point set ("
                   << verts.size() << " points)..." << std::endl;
         mve::geom::save_ply_mesh(point_set, util::fs::join_path(m_pScene->get_path(), "point-set.ply"), opts);
+        m_point_set = point_set;
     }
 
     // display cluster
@@ -965,20 +961,16 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     mve::TriangleMesh::ColorList &v_color(point_set->get_vertex_colors());
     std::vector<Vertex> vertices(v_pos.size());
     glm::mat4 transform(1.0f);
-    if (!m_pGLPanel->GetTargetList().empty()) {
-        for (const auto &obj : m_pGLPanel->GetTargetList()) {
-            if (obj->As<Cluster>() != nullptr) {
-                transform = obj->GetTransform();
-                break;
-            }
-        }
+    // inherit cluster's transform
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
     }
     m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
-    m_pGLPanel->AddCluster(vertices, transform);
+    m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
 
     event.Skip();

@@ -22,7 +22,7 @@ public:
 
     void AddCameraFrustum(const glm::mat4 &transform);
 
-    void AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform = glm::mat4(1.0f));
+    Cluster::Ptr AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform = glm::mat4(1.0f));
 
     template<typename T>
     void ClearObjects();

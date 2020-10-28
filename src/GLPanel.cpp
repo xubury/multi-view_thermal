@@ -81,10 +81,11 @@ void GLPanel::AddCameraFrustum(const glm::mat4 &transform) {
     m_targets.emplace_back(frustum);
 }
 
-void GLPanel::AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform) {
+Cluster::Ptr GLPanel::AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform) {
     Cluster::Ptr cluster = RenderTarget::Create<Cluster>(transform);
     cluster->SetCluster(vertices);
     m_targets.emplace_back(cluster);
+    return cluster;
 }
 
 void GLPanel::OpenGLDebugMessage(gl::GLenum, gl::GLenum, gl::GLuint, gl::GLenum severity,

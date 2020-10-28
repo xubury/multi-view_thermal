@@ -11,6 +11,7 @@
 #include <vector>
 #include "mve/view.h"
 #include "mve/scene.h"
+#include "Cluster.hpp"
 
 class GLPanel;
 
@@ -44,13 +45,21 @@ private:
 
     void OnMenuDepthRecon(wxCommandEvent &event);
 
+    /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
+    void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
+
     ImageList m_originalImageList;
 
     GLPanel *m_pGLPanel;
+
+    /** The pointer that hold all the data(image, death map...etc)*/
     mve::Scene::Ptr m_pScene;
 
-    /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
-    void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
+    /** The pointer to OpenGL render target */
+    Cluster::Ptr m_pCluster;
+
+    /** The pointer to mvs construct result*/
+    mve::TriangleMesh::Ptr m_point_set;
 };
 
 #endif //_MAIN_FRAME_HPP
