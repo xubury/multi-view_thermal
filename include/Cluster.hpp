@@ -2,6 +2,7 @@
 #define _CLUSTER_HPP
 
 #include "RenderTarget.hpp"
+#include <vector>
 
 class Cluster : public RenderTarget {
 public:
