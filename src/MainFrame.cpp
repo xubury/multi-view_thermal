@@ -499,287 +499,269 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
 }
 
 void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
-    if (m_pScene == nullptr) {
+    if (m_pScene == nullptr || m_pScene->get_views().empty()) {
         event.Skip();
         return;
     }
     util::WallTimer total_timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
-    if (views.empty()) {
-        event.Skip();
-        return;
-    } else {
-        /* Update legacy data */
-        for (const auto& view : views) {
-            if (view == nullptr)
-                continue;
-            mve::View::ImageProxies proxies = view->get_images();
-            for (const auto &proxy : proxies)
-                if (proxy.name == "lighting-shaded"
-                    || proxy.name == "lighting-sphere"
-                    || proxy.name == "implicit-albedo")
-                    view->remove_image(proxy.name);
-            view->save_view();
-            for (const auto &proxy : proxies)
-                if (proxy.name == "sgm-depth") {
-                    std::string file = util::fs::join_path( view->get_directory(), proxy.filename);
-                    std::string new_file = util::fs::join_path( view->get_directory(), "smvs-sgm.mvei");
-                    util::fs::rename(file.c_str(), new_file.c_str());
-                }
-            view->reload_view();
-        }
-        std::string input_name;
-        int scale = get_scale_from_max_pixel(m_pScene, 0);
-        if (scale > 0)
-            input_name = "undist-L" + util::string::get(scale);
-        else
-            input_name = UNDISTORTED_IMAGE_NAME;
-
-        std::string dm_name = "smvs-B" + util::string::get(scale);
-
-        /* Add views to reconstruction list */
-        std::vector<int> reconstruction_list;
-        for (std::size_t i = 0; i < views.size(); ++i) {
-            if (views[i] == nullptr) {
-                std::cout << "View ID " << i << " invalid, skipping view."
-                          << std::endl;
-                continue;
+    /* Update legacy data */
+    for (const auto &view : views) {
+        if (view == nullptr)
+            continue;
+        mve::View::ImageProxies proxies = view->get_images();
+        for (const auto &proxy : proxies)
+            if (proxy.name == "lighting-shaded"
+                || proxy.name == "lighting-sphere"
+                || proxy.name == "implicit-albedo")
+                view->remove_image(proxy.name);
+        view->save_view();
+        for (const auto &proxy : proxies)
+            if (proxy.name == "sgm-depth") {
+                std::string file = util::fs::join_path(view->get_directory(), proxy.filename);
+                std::string new_file = util::fs::join_path(view->get_directory(), "smvs-sgm.mvei");
+                util::fs::rename(file.c_str(), new_file.c_str());
             }
-            if (!views[i]->has_image(UNDISTORTED_IMAGE_NAME)) {
-                std::cout << "View ID " << i << " missing image embedding, "
-                          << "skipping view." << std::endl;
-                continue;
-            }
-            if (views[i]->has_image(dm_name)) {
-                std::cout << "View ID " << i << " already reconstructed, "
-                          << "skipping view." << std::endl;
-                continue;
-            }
-            reconstruction_list.push_back(i);
-        }
-        /* Create reconstruction threads */
-        ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
-        /* View selection */
-        smvs::ViewSelection::Options view_select_opts;
-        view_select_opts.num_neighbors = 6;
-        view_select_opts.embedding = UNDISTORTED_IMAGE_NAME;
-        smvs::ViewSelection view_selection(view_select_opts, views, m_pScene->get_bundle());
-        std::vector<mve::Scene::ViewList> view_neighbors( reconstruction_list.size());
-        std::vector<std::future<void>> selection_tasks;
-        for (std::size_t v = 0; v < reconstruction_list.size(); ++v)
-        {
-            int const i = reconstruction_list[v];
-            selection_tasks.emplace_back(thread_pool.add_task(
-                [i, v, &views, &view_selection, &view_neighbors]
-                {
-                  view_neighbors[v] = view_selection.get_neighbors_for_view(i);
-                }));
-        }
-        if (!selection_tasks.empty())
-        {
-            std::cout << "Running view selection for "
-                      << selection_tasks.size() << " views... " << std::flush;
-            util::WallTimer timer;
-            for(auto && task : selection_tasks) task.get();
-            std::cout << " done, took " << timer.get_elapsed_sec()
-                      << "s." << std::endl;
-        }
-
-
-        std::vector<int> skipped;
-        std::vector<int> final_reconstruction_list;
-        std::vector<mve::Scene::ViewList> final_view_neighbors;
-        for (std::size_t v = 0; v < reconstruction_list.size(); ++v)
-            if (view_neighbors[v].size() < view_select_opts.num_neighbors)
-                skipped.push_back(reconstruction_list[v]);
-            else
-            {
-                final_reconstruction_list.push_back(reconstruction_list[v]);
-                final_view_neighbors.push_back(view_neighbors[v]);
-            }
-        if (!skipped.empty())
-        {
-            std::cout << "Skipping " << skipped.size() << " views with "
-                      << "insufficient number of neighbors." << std::endl;
-            std::cout << "Skipped IDs: ";
-            for (std::size_t s = 0; s < skipped.size(); ++s)
-            {
-                std::cout << skipped[s] << " ";
-                if (s > 0 && s % 12 == 0)
-                    std::cout << std::endl << "     ";
-            }
-            std::cout << std::endl;
-        }
-        reconstruction_list = final_reconstruction_list;
-        view_neighbors = final_view_neighbors;
-
-        /* Create input embedding and resize */
-        std::set<int> check_embedding_list;
-        for (std::size_t v = 0; v < reconstruction_list.size(); ++v)
-        {
-            check_embedding_list.insert(reconstruction_list[v]);
-            for (auto & neighbor : view_neighbors[v])
-                check_embedding_list.insert(neighbor->get_id());
-        }
-        std::vector<std::future<void>> resize_tasks;
-        for (auto const& i : check_embedding_list)
-        {
-            mve::View::Ptr view = views[i];
-            if (view == nullptr
-                || !view->has_image(UNDISTORTED_IMAGE_NAME)
-                || view->has_image(input_name))
-                continue;
-
-            resize_tasks.emplace_back(thread_pool.add_task(
-                [view, &input_name, &scale]
-                {
-                  mve::ByteImage::ConstPtr input =
-                      view->get_byte_image(UNDISTORTED_IMAGE_NAME);
-                  mve::ByteImage::Ptr scld = input->duplicate();
-                  for (int i = 0; i < scale; ++i)
-                      scld = mve::image::rescale_half_size_gaussian<uint8_t>(scld);
-                  view->set_image(scld, input_name);
-                  view->save_view();
-                }));
-        }
-
-        if (!resize_tasks.empty())
-        {
-            std::cout << "Resizing input images for "
-                      << resize_tasks.size() << " views... " << std::flush;
-            util::WallTimer timer;
-            for(auto && task : resize_tasks) task.get();
-            std::cout << " done, took " << timer.get_elapsed_sec()
-                      << "s." << std::endl;
-        }
-        std::vector<std::future<void>> results;
-        std::mutex counter_mutex;
-        std::size_t started = 0;
-        std::size_t finished = 0;
-        util::WallTimer timer;
-
-        for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
-            int const i = reconstruction_list[v];
-            results.emplace_back(thread_pool.add_task(
-                [v, i, &views, &counter_mutex, &input_name, &dm_name,
-                    &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
-                    this] {
-                  smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, false, false);
-                  mve::Scene::ViewList neighbors = view_neighbors[v];
-
-                  std::vector<smvs::StereoView::Ptr> stereo_views;
-
-                  std::unique_lock<std::mutex> lock(counter_mutex);
-                  std::cout << "\rStarting "
-                            << ++started << "/" << reconstruction_list.size()
-                            << " ID: " << i
-                            << " Neighbors: ";
-                  lock.unlock();
-
-                  for (std::size_t n = 0; n < view_select_opts.num_neighbors
-                      && n < neighbors.size(); ++n)
-                      std::cout << neighbors[n]->get_id() << " ";
-                  std::cout << std::endl;
-
-                  for (std::size_t n = 0; n < view_select_opts.num_neighbors
-                      && n < neighbors.size(); ++n) {
-                      smvs::StereoView::Ptr sv = smvs::StereoView::create(
-                          neighbors[n], input_name);
-                      stereo_views.push_back(sv);
-                  }
-
-                  int sgm_width = views[i]->get_image_proxy(input_name)->width;
-                  int sgm_height = views[i]->get_image_proxy(input_name)->height;
-                  sgm_width = (sgm_width + 1) / 2;
-                  sgm_height = (sgm_height + 1) / 2;
-                  if (!views[i]->has_image("smvs-sgm")
-                      || views[i]->get_image_proxy("smvs-sgm")->width !=
-                          sgm_width
-                      || views[i]->get_image_proxy("smvs-sgm")->height !=
-                          sgm_height)
-                      Util::ReconstructSGMDepthForView(main_view, stereo_views, m_pScene->get_bundle());
-
-                  smvs::DepthOptimizer::Options do_opts;
-                  do_opts.regularization = 0.01;
-                  do_opts.num_iterations = 5;
-                  do_opts.min_scale = 3;
-                  do_opts.output_name = dm_name;
-                  do_opts.use_sgm = true;
-                  smvs::DepthOptimizer optimizer(main_view, stereo_views,
-                                                 m_pScene->get_bundle(), do_opts);
-                  optimizer.optimize();
-
-                  std::unique_lock<std::mutex> lock2(counter_mutex);
-                  std::cout << "\rFinished "
-                            << ++finished << "/" << reconstruction_list.size()
-                            << " ID: " << i
-                            << std::endl;
-                  lock2.unlock();
-                }));
-        }
-        /* Wait for reconstruction to finish */
-        for(auto && result: results) result.get();
-        std::cout << "Reconstruction took "
-                  << total_timer.get_elapsed() << "ms." << std::endl;
-        std::cout << "Saving views back to disc..." << std::endl;
-        m_pScene->save_views();
-
-        m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, scale, "mvs-point-set", false);
-
-        // display cluster
-        mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
-        mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
-        std::vector<Vertex> vertices(v_pos.size());
-        glm::mat4 transform(1.0f);
-        // inherit cluster's transform
-        if (m_pCluster != nullptr) {
-            transform = m_pCluster->GetTransform();
-        }
-        m_pGLPanel->ClearObjects<Cluster>();
-        for (std::size_t i = 0; i < vertices.size(); ++i) {
-            vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
-            vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
-        }
-        m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
-        Refresh();
-        event.Skip();
+        view->reload_view();
     }
+    std::string input_name;
+    int scale = get_scale_from_max_pixel(m_pScene, 0);
+    if (scale > 0)
+        input_name = "undist-L" + util::string::get(scale);
+    else
+        input_name = UNDISTORTED_IMAGE_NAME;
+
+    std::string dm_name = "smvs-B" + util::string::get(scale);
+
+    /* Add views to reconstruction list */
+    std::vector<int> reconstruction_list;
+    for (std::size_t i = 0; i < views.size(); ++i) {
+        if (views[i] == nullptr) {
+            std::cout << "View ID " << i << " invalid, skipping view."
+                      << std::endl;
+            continue;
+        }
+        if (!views[i]->has_image(UNDISTORTED_IMAGE_NAME)) {
+            std::cout << "View ID " << i << " missing image embedding, "
+                      << "skipping view." << std::endl;
+            continue;
+        }
+        if (views[i]->has_image(dm_name)) {
+            std::cout << "View ID " << i << " already reconstructed, "
+                      << "skipping view." << std::endl;
+            continue;
+        }
+        reconstruction_list.push_back(i);
+    }
+    /* Create reconstruction threads */
+    ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
+    /* View selection */
+    smvs::ViewSelection::Options view_select_opts;
+    view_select_opts.num_neighbors = 6;
+    view_select_opts.embedding = UNDISTORTED_IMAGE_NAME;
+    smvs::ViewSelection view_selection(view_select_opts, views, m_pScene->get_bundle());
+    std::vector<mve::Scene::ViewList> view_neighbors(reconstruction_list.size());
+    std::vector<std::future<void>> selection_tasks;
+    for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
+        int const i = reconstruction_list[v];
+        selection_tasks.emplace_back(thread_pool.add_task(
+            [i, v, &views, &view_selection, &view_neighbors] {
+              view_neighbors[v] = view_selection.get_neighbors_for_view(i);
+            }));
+    }
+    if (!selection_tasks.empty()) {
+        std::cout << "Running view selection for "
+                  << selection_tasks.size() << " views... " << std::flush;
+        util::WallTimer timer;
+        for (auto &&task : selection_tasks)
+            task.get();
+        std::cout << " done, took " << timer.get_elapsed_sec()
+                  << "s." << std::endl;
+    }
+
+    std::vector<int> skipped;
+    std::vector<int> final_reconstruction_list;
+    std::vector<mve::Scene::ViewList> final_view_neighbors;
+    for (std::size_t v = 0; v < reconstruction_list.size(); ++v)
+        if (view_neighbors[v].size() < view_select_opts.num_neighbors)
+            skipped.push_back(reconstruction_list[v]);
+        else {
+            final_reconstruction_list.push_back(reconstruction_list[v]);
+            final_view_neighbors.push_back(view_neighbors[v]);
+        }
+    if (!skipped.empty()) {
+        std::cout << "Skipping " << skipped.size() << " views with "
+                  << "insufficient number of neighbors." << std::endl;
+        std::cout << "Skipped IDs: ";
+        for (std::size_t s = 0; s < skipped.size(); ++s) {
+            std::cout << skipped[s] << " ";
+            if (s > 0 && s % 12 == 0)
+                std::cout << std::endl << "     ";
+        }
+        std::cout << std::endl;
+    }
+    reconstruction_list = final_reconstruction_list;
+    view_neighbors = final_view_neighbors;
+
+    /* Create input embedding and resize */
+    std::set<int> check_embedding_list;
+    for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
+        check_embedding_list.insert(reconstruction_list[v]);
+        for (auto &neighbor : view_neighbors[v])
+            check_embedding_list.insert(neighbor->get_id());
+    }
+    std::vector<std::future<void>> resize_tasks;
+    for (auto const &i : check_embedding_list) {
+        mve::View::Ptr view = views[i];
+        if (view == nullptr
+            || !view->has_image(UNDISTORTED_IMAGE_NAME)
+            || view->has_image(input_name))
+            continue;
+
+        resize_tasks.emplace_back(thread_pool.add_task(
+            [view, &input_name, &scale] {
+              mve::ByteImage::ConstPtr input =
+                  view->get_byte_image(UNDISTORTED_IMAGE_NAME);
+              mve::ByteImage::Ptr scld = input->duplicate();
+              for (int i = 0; i < scale; ++i)
+                  scld = mve::image::rescale_half_size_gaussian<uint8_t>(scld);
+              view->set_image(scld, input_name);
+              view->save_view();
+            }));
+    }
+
+    if (!resize_tasks.empty()) {
+        std::cout << "Resizing input images for "
+                  << resize_tasks.size() << " views... " << std::flush;
+        util::WallTimer timer;
+        for (auto &&task : resize_tasks)
+            task.get();
+        std::cout << " done, took " << timer.get_elapsed_sec()
+                  << "s." << std::endl;
+    }
+    std::vector<std::future<void>> results;
+    std::mutex counter_mutex;
+    std::size_t started = 0;
+    std::size_t finished = 0;
+    util::WallTimer timer;
+
+    for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
+        int const i = reconstruction_list[v];
+        results.emplace_back(thread_pool.add_task(
+            [v, i, &views, &counter_mutex, &input_name, &dm_name,
+                &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
+                this] {
+              smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, false, false);
+              mve::Scene::ViewList neighbors = view_neighbors[v];
+
+              std::vector<smvs::StereoView::Ptr> stereo_views;
+
+              std::unique_lock<std::mutex> lock(counter_mutex);
+              std::cout << "\rStarting "
+                        << ++started << "/" << reconstruction_list.size()
+                        << " ID: " << i
+                        << " Neighbors: ";
+              lock.unlock();
+
+              for (std::size_t n = 0; n < view_select_opts.num_neighbors
+                  && n < neighbors.size(); ++n)
+                  std::cout << neighbors[n]->get_id() << " ";
+              std::cout << std::endl;
+
+              for (std::size_t n = 0; n < view_select_opts.num_neighbors
+                  && n < neighbors.size(); ++n) {
+                  smvs::StereoView::Ptr sv = smvs::StereoView::create(
+                      neighbors[n], input_name);
+                  stereo_views.push_back(sv);
+              }
+
+              int sgm_width = views[i]->get_image_proxy(input_name)->width;
+              int sgm_height = views[i]->get_image_proxy(input_name)->height;
+              sgm_width = (sgm_width + 1) / 2;
+              sgm_height = (sgm_height + 1) / 2;
+              if (!views[i]->has_image("smvs-sgm")
+                  || views[i]->get_image_proxy("smvs-sgm")->width !=
+                      sgm_width
+                  || views[i]->get_image_proxy("smvs-sgm")->height !=
+                      sgm_height)
+                  Util::ReconstructSGMDepthForView(main_view, stereo_views, m_pScene->get_bundle());
+
+              smvs::DepthOptimizer::Options do_opts;
+              do_opts.regularization = 0.01;
+              do_opts.num_iterations = 5;
+              do_opts.min_scale = 3;
+              do_opts.output_name = dm_name;
+              do_opts.use_sgm = true;
+              smvs::DepthOptimizer optimizer(main_view, stereo_views,
+                                             m_pScene->get_bundle(), do_opts);
+              optimizer.optimize();
+
+              std::unique_lock<std::mutex> lock2(counter_mutex);
+              std::cout << "\rFinished "
+                        << ++finished << "/" << reconstruction_list.size()
+                        << " ID: " << i
+                        << std::endl;
+              lock2.unlock();
+            }));
+    }
+    /* Wait for reconstruction to finish */
+    for (auto &&result: results)
+        result.get();
+    std::cout << "Reconstruction took "
+              << total_timer.get_elapsed() << "ms." << std::endl;
+    std::cout << "Saving views back to disc..." << std::endl;
+    m_pScene->save_views();
+
+    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, scale, "mvs-point-set", false);
+
+    // display cluster
+    mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
+    std::vector<Vertex> vertices(v_pos.size());
+    glm::mat4 transform(1.0f);
+    // inherit cluster's transform
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
+    }
+    m_pGLPanel->ClearObjects<Cluster>();
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    }
+    m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
+    Refresh();
+    event.Skip();
 }
 
 void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
-    if (m_pScene == nullptr) {
+    if (m_pScene == nullptr || m_pScene->get_views().empty()) {
         event.Skip();
         return;
     }
     util::WallTimer timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
     int scale = get_scale_from_max_pixel(m_pScene, 0);
-    if (views.empty()) {
-        event.Skip();
-        return;
-    } else {
 #pragma omp parallel for schedule(dynamic, 1)
-        for (std::size_t id = 0; id < views.size(); ++id) {
-            if (views[id] == nullptr || !views[id]->is_camera_valid())
-                continue;
+    for (std::size_t id = 0; id < views.size(); ++id) {
+        if (views[id] == nullptr || !views[id]->is_camera_valid())
+            continue;
 
-            mvs::Settings settings;
-            settings.scale = scale;
-            /* Setup MVS. */
-            settings.refViewNr = id;
+        mvs::Settings settings;
+        settings.scale = scale;
+        /* Setup MVS. */
+        settings.refViewNr = id;
 
-            std::string embedding_name = "depth-L"
-                + util::string::get(settings.scale);
-            if (views[id]->has_image(embedding_name))
-                continue;
+        std::string embedding_name = "depth-L"
+            + util::string::get(settings.scale);
+        if (views[id]->has_image(embedding_name))
+            continue;
 
-            try {
-                mvs::DMRecon recon(m_pScene, settings);
-                recon.start();
-            }
-            catch (std::exception &err) {
-                std::cerr << err.what() << std::endl;
-            }
+        try {
+            mvs::DMRecon recon(m_pScene, settings);
+            recon.start();
+        }
+        catch (std::exception &err) {
+            std::cerr << err.what() << std::endl;
         }
     }
     std::cout << "Reconstruction took "
