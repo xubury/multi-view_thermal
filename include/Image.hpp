@@ -44,6 +44,6 @@ bool features_and_matching(mve::Scene::Ptr scene,
                            sfm::bundler::ViewportList *viewports,
                            sfm::bundler::PairwiseMatching *pairwise_matching);
 
-int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, const mvs::Settings &mvs);
+int get_scale_from_max_pixel(const mve::Scene::Ptr &scene);
 
 #endif //_IMAGE_HPP

@@ -40,19 +40,23 @@ add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
                           src/feature/Harris.cpp include/feature/Harris.hpp include/Util.hpp src/Util.cpp)
 
 add_dependencies(multi_view ext_mve)
+add_dependencies(multi_view ext_smvs)
 
 target_compile_definitions(multi_view PUBLIC ${wxWidgets_DEFINITIONS})
-target_include_directories(multi_view PUBLIC include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs)
+target_include_directories(multi_view PUBLIC include ${wxWidgets_INCLUDE_DIRS} elibs/mve/libs elibs/smvs/lib)
 target_precompile_headers(multi_view PUBLIC include/pch.hpp)
 
 target_link_directories(multi_view PUBLIC
                         elibs/mve/libs/mve
                         elibs/mve/libs/util
                         elibs/mve/libs/sfm
-                        elibs/mve/libs/dmrecon)
+                        elibs/mve/libs/dmrecon
+                        elibs/smvs/lib)
 target_link_libraries(multi_view ${wxWidgets_LIBRARIES} fmt::fmt
                       OpenGL::GL glbinding::glbinding glm
-                      mve_dmrecon mve_sfm mve mve_util  ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
+                      mve_dmrecon mve_sfm mve mve_util
+                      smvs
+                      ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 
 add_custom_target(shader_files
                   COMMAND ${CMAKE_COMMAND} -E copy_directory
