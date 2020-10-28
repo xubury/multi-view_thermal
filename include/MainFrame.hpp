@@ -30,7 +30,7 @@ public:
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
         MENU_DEPTH_RECON,
-        MENU_PSET_RECON,
+        MENU_DEPTH_RECON_OLD,
         MENU_FSS_RECON,
     };
 private:
@@ -40,9 +40,9 @@ private:
 
     void OnMenuStructureFromMotion(wxCommandEvent &event);
 
-    void OnMenuDepthRecon(wxCommandEvent &event);
+    void OnMenuDepthReconSMVS(wxCommandEvent &event);
 
-    void OnMenuDensePointRecon(wxCommandEvent &event);
+    void OnMenuDepthRecon(wxCommandEvent &event);
 
     ImageList m_originalImageList;
 

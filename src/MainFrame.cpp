@@ -15,6 +15,7 @@
 #include "mve/bundle_io.h"
 #include "dmrecon/settings.h"
 #include "math/octree_tools.h"
+#include "dmrecon/dmrecon.h"
 #include "mve/depthmap.h"
 #include "mve/mesh_info.h"
 #include "mve/mesh_io.h"
@@ -30,7 +31,7 @@
 #include "view_selection.h"
 #include "sgm_stereo.h"
 
-void generate_mesh(mve::Scene::Ptr scene,
+mve::TriangleMesh::Ptr generate_mesh(mve::Scene::Ptr scene,
                    std::string const &input_name,
                    std::string const &dm_name,
                    bool triangle_mesh)
@@ -73,6 +74,7 @@ void generate_mesh(mve::Scene::Ptr scene,
     opts.write_vertex_values = true;
     opts.write_vertex_confidences = true;
     mve::geom::save_ply_mesh(mesh, meshname, opts);
+    return mesh;
 }
 
 void reconstruct_sgm_depth_for_view ( smvs::StereoView::Ptr main_view,
@@ -141,10 +143,10 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
-    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Map Generation"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON);
-    pOperateMenu->Append(MENU::MENU_PSET_RECON, _("Dense Point Cloud Reconstruction"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDensePointRecon, this, MENU::MENU_PSET_RECON);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Map Generation(SMVS)"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconSMVS, this, MENU::MENU_DEPTH_RECON);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_OLD, _("Depth Map Generation"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON_OLD);
 
     pMenuBar->Append(pFileMenu, _("File"));
     pMenuBar->Append(pOperateMenu, _("Operation"));
@@ -577,7 +579,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     }
 }
 
-void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
+void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
     if (m_pScene == nullptr) {
         event.Skip();
         return;
@@ -781,7 +783,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
                   smvs::DepthOptimizer::Options do_opts;
                   do_opts.regularization = 0.01;
                   do_opts.num_iterations = 5;
-                  do_opts.min_scale = 2;
+                  do_opts.min_scale = 3;
                   do_opts.output_name = output_name;
                   do_opts.use_sgm = true;
                   smvs::DepthOptimizer optimizer(main_view, stereo_views,
@@ -802,16 +804,71 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
                   << total_timer.get_elapsed() << "ms." << std::endl;
         std::cout << "Saving views back to disc..." << std::endl;
         m_pScene->save_views();
-        generate_mesh(m_pScene, input_name, output_name, false);
+        mve::TriangleMesh::Ptr mesh = generate_mesh(m_pScene, input_name, output_name, false);
+
+        // display cluster
+        mve::TriangleMesh::VertexList &v_pos(mesh->get_vertices());
+        mve::TriangleMesh::ColorList &v_color(mesh->get_vertex_colors());
+        std::vector<Vertex> vertices(v_pos.size());
+        glm::mat4 transform(1.0f);
+        if (!m_pGLPanel->GetTargetList().empty()) {
+            for (const auto &obj : m_pGLPanel->GetTargetList()) {
+                if (obj->As<Cluster>() != nullptr) {
+                    transform = obj->GetTransform();
+                    break;
+                }
+            }
+        }
+        m_pGLPanel->ClearObjects<Cluster>();
+        for (std::size_t i = 0; i < vertices.size(); ++i) {
+            vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+            vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+        }
+        m_pGLPanel->AddCluster(vertices, transform);
+        Refresh();
         event.Skip();
     }
 }
 
-void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
+void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     if (m_pScene == nullptr) {
         event.Skip();
         return;
     }
+    util::WallTimer timer;
+    mvs::Settings settings;
+    int scale = get_scale_from_max_pixel(m_pScene);
+    mve::Scene::ViewList &views(m_pScene->get_views());
+    if (views.empty()) {
+        event.Skip();
+        return;
+    } else {
+#pragma omp parallel for schedule(dynamic, 1)
+        for (std::size_t id = 0; id < views.size(); ++id) {
+            if (views[id] == nullptr || !views[id]->is_camera_valid())
+                continue;
+
+            /* Setup MVS. */
+            settings.refViewNr = id;
+
+            std::string embedding_name = "depth-L"
+                + util::string::get(settings.scale);
+            if (views[id]->has_image(embedding_name))
+                continue;
+
+            try {
+                mvs::DMRecon recon(m_pScene, settings);
+                recon.start();
+            }
+            catch (std::exception &err) {
+                std::cerr << err.what() << std::endl;
+            }
+        }
+    }
+    std::cout << "Reconstruction took "
+              << timer.get_elapsed() << "ms." << std::endl;
+    std::cout << "Saving views back to disc..." << std::endl;
+    m_pScene->save_views();
     std::string ply_path = util::fs::join_path(m_pScene->get_path(), "point-set.ply");
     mve::TriangleMesh::Ptr point_set;
     if (util::fs::file_exists(ply_path.c_str())) // skip point set reconstruction if ply is found
@@ -825,10 +882,6 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
         mve::TriangleMesh::ValueList &vvalues(point_set->get_vertex_values());
         mve::TriangleMesh::ConfidenceList &vconfs(point_set->get_vertex_confidences());
 
-        /* Iterate over views and get points. */
-        mve::Scene::ViewList &views(m_pScene->get_views());
-
-        int scale = get_scale_from_max_pixel(m_pScene);
 
 #pragma omp parallel for schedule(dynamic)
         for (std::size_t i = 0; i < views.size(); ++i) {
@@ -875,8 +928,8 @@ void MainFrame::OnMenuDensePointRecon(wxCommandEvent &event) {
             mve::MeshInfo mesh_info(mesh);
             for (std::size_t j = 0; j < mesh_info.size(); ++j) {
                 mve::MeshInfo::VertexInfo const &vinf = mesh_info[j];
-                for (std::size_t k = 0; k < vinf.verts.size(); ++k)
-                    mvscale[j] += (mverts[j] - mverts[vinf.verts[k]]).norm();
+                for (unsigned long long vert : vinf.verts)
+                    mvscale[j] += (mverts[j] - mverts[vert]).norm();
                 mvscale[j] /= static_cast<float>(vinf.verts.size());
                 mvscale[j] *= scale;
             }
