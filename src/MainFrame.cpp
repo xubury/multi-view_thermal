@@ -100,7 +100,10 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
             mve::Bundle::Ptr bundle = mve::load_mve_bundle(util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
             std::vector<Vertex> vertices(bundle->get_features().size());
             mve::Bundle::Features &features = bundle->get_features();
-            m_pGLPanel->ClearObjects<Cluster>();
+
+            if (m_pCluster != nullptr)
+                m_pGLPanel->ClearObject(m_pCluster);
+
             for (std::size_t i = 0; i < vertices.size(); ++i) {
                 vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
                 vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
@@ -209,6 +212,9 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 
         SetStatusText(scenePath);
         DisplaySceneImage(ORIGINAL_IMAGE_NAME, m_originalImageList);
+
+        m_pGLPanel->ClearObjects<Frustum>();
+        m_pGLPanel->ClearObject(m_pCluster);
     }
     event.Skip();
 }
@@ -447,7 +453,8 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     mve::save_mve_bundle(bundle, util::fs::join_path(m_pScene->get_path(), "synth_0.out"));
     std::vector<Vertex> vertices(bundle->get_features().size());
     mve::Bundle::Features &features = bundle->get_features();
-    m_pGLPanel->ClearObjects<Cluster>();
+    if (m_pCluster != nullptr)
+        m_pGLPanel->ClearObject(m_pCluster);
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(features[i].pos[0], features[i].pos[1], features[i].pos[2]);
         vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
@@ -491,6 +498,9 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     }
     m_pGLPanel->ClearObjects<Frustum>();
     for (const auto &view : views) {
+        if (!view->is_camera_valid())
+            continue;
+
         glm::mat4 trans;
         view->get_camera().fill_cam_to_world(&trans[0].x);
         trans = Util::MveToGLMatrix(trans);
@@ -722,8 +732,8 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
     // inherit cluster's transform
     if (m_pCluster != nullptr) {
         transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
     }
-    m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
@@ -785,8 +795,8 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     // inherit cluster's transform
     if (m_pCluster != nullptr) {
         transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
     }
-    m_pGLPanel->ClearObjects<Cluster>();
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);

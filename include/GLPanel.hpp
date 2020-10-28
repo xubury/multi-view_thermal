@@ -27,6 +27,8 @@ public:
     template<typename T>
     void ClearObjects();
 
+    void ClearObject(const RenderTarget::Ptr &target);
+
     static void OpenGLDebugMessage(gl::GLenum source, gl::GLenum type, gl::GLuint id, gl::GLenum severity,
                                    gl::GLsizei length, const gl::GLchar *message, const void *userdata);
 
@@ -58,6 +60,12 @@ inline void GLPanel::ClearObjects() {
     m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [](const auto &target) -> bool {
       return dynamic_cast<T *>(target.get()) != nullptr;
     }), m_targets.end());
+}
+
+inline void GLPanel::ClearObject(const RenderTarget::Ptr &target) {
+    if (target == nullptr) return;
+    m_targets.erase(std::remove_if(m_targets.begin(), m_targets.end(), [target](const auto &v) { return target == v; }),
+                    m_targets.end());
 }
 
 inline std::vector<RenderTarget::Ptr> GLPanel::GetTargetList() {
