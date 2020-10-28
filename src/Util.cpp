@@ -13,7 +13,7 @@
 #include "view_selection.h"
 #include "sgm_stereo.h"
 
-namespace util {
+namespace Util {
 
 glm::mat4 MveToGLMatrix(const glm::mat4 &matrix) {
     glm::mat4 out;
@@ -289,4 +289,4 @@ void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
     main_view->write_depth_to_view(d1, "smvs-sgm");
 }
 
-} // namespace util
+} // namespace Util

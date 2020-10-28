@@ -114,7 +114,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
 
                 glm::mat4 trans;
                 view->get_camera().fill_cam_to_world(&trans[0].x);
-                trans = util::MveToGLMatrix(trans);
+                trans = Util::MveToGLMatrix(trans);
                 m_pGLPanel->AddCameraFrustum(trans);
             }
         } catch (const std::exception &e) {
@@ -493,7 +493,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     for (const auto &view : views) {
         glm::mat4 trans;
         view->get_camera().fill_cam_to_world(&trans[0].x);
-        trans = util::MveToGLMatrix(trans);
+        trans = Util::MveToGLMatrix(trans);
         m_pGLPanel->AddCameraFrustum(trans);
     }
 }
@@ -697,7 +697,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
                           sgm_width
                       || views[i]->get_image_proxy("smvs-sgm")->height !=
                           sgm_height)
-                      util::ReconstructSGMDepthForView(main_view, stereo_views, m_pScene->get_bundle());
+                      Util::ReconstructSGMDepthForView(main_view, stereo_views, m_pScene->get_bundle());
 
                   smvs::DepthOptimizer::Options do_opts;
                   do_opts.regularization = 0.01;
@@ -724,7 +724,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
         std::cout << "Saving views back to disc..." << std::endl;
         m_pScene->save_views();
 
-        m_point_set = util::GenerateMeshSMVS(m_pScene, input_name, dm_name, scale, "mvs-point-set", false);
+        m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, scale, "mvs-point-set", false);
 
         // display cluster
         mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -794,7 +794,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     } else {
         input_name = UNDISTORTED_IMAGE_NAME;
     }
-    m_point_set = util::GenerateMesh(m_pScene, input_name, dm_name, scale, "point-set");
+    m_point_set = Util::GenerateMesh(m_pScene, input_name, dm_name, scale, "point-set");
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
     mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());

@@ -6,7 +6,7 @@
 #include "sgm_stereo.h"
 #include <glm/glm.hpp>
 
-namespace util {
+namespace Util {
 
 glm::mat4 MveToGLMatrix(const glm::mat4 &matrix);
 
@@ -36,6 +36,6 @@ void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle = nullptr);
 
-} // namespace util
+} // namespace Util
 
 #endif //_UTIL_HPP

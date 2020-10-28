@@ -69,18 +69,18 @@ void Harris::ApplyGaussToDerivatives(float sigma) {
     if (m_filter_range == 0)
         return;
 
-    util::GaussFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range, sigma);
-    util::GaussFilter(m_derivatives.Iy, m_derivatives.Iy, m_filter_range, sigma);
-    util::GaussFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range, sigma);
+    Util::GaussFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range, sigma);
+    Util::GaussFilter(m_derivatives.Iy, m_derivatives.Iy, m_filter_range, sigma);
+    Util::GaussFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range, sigma);
 }
 
 void Harris::ApplyMeanToDerivatives() {
     if (m_filter_range == 0)
         return;
 
-    util::MeanFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range);
-    util::MeanFilter(m_derivatives.Ix, m_derivatives.Iy, m_filter_range);
-    util::MeanFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range);
+    Util::MeanFilter(m_derivatives.Ix, m_derivatives.Ix, m_filter_range);
+    Util::MeanFilter(m_derivatives.Ix, m_derivatives.Iy, m_filter_range);
+    Util::MeanFilter(m_derivatives.Ixy, m_derivatives.Ixy, m_filter_range);
 }
 
 void Harris::ComputeHarrisResponses() {
