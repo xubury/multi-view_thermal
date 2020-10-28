@@ -26,87 +26,7 @@
 #include "thread_pool.h"
 #include "stereo_view.h"
 #include "depth_optimizer.h"
-#include "mesh_generator.h"
 #include "view_selection.h"
-#include "sgm_stereo.h"
-
-mve::TriangleMesh::Ptr generate_mesh(mve::Scene::Ptr scene,
-                   std::string const &input_name,
-                   std::string const &dm_name,
-                   bool triangle_mesh)
-{
-    std::cout << "Generating ";
-
-    util::WallTimer timer;
-    mve::Scene::ViewList recon_views;
-    for (auto & i : scene->get_views())
-        recon_views.push_back(i);
-
-    std::cout << " for " << recon_views.size() << " views ..." << std::endl;
-
-    smvs::MeshGenerator::Options meshgen_opts;
-    meshgen_opts.num_threads = std::thread::hardware_concurrency();
-    meshgen_opts.cut_surfaces = true;
-    meshgen_opts.simplify = false;
-    meshgen_opts.create_triangle_mesh = false;
-
-    smvs::MeshGenerator meshgen(meshgen_opts);
-    mve::TriangleMesh::Ptr mesh = meshgen.generate_mesh(recon_views,
-                                                        input_name, dm_name);
-    std::cout << "Done. Took: " << timer.get_elapsed_sec() << "s" << std::endl;
-
-    if(triangle_mesh)
-        mesh->recalc_normals();
-
-    /* Build mesh name */
-    std::string meshname = "smvs-";
-    if (triangle_mesh)
-        meshname += "m-";
-    else
-        meshname += "B";
-    meshname += ".ply";
-    meshname = util::fs::join_path(scene->get_path(), meshname);
-
-    /* Save mesh */
-    mve::geom::SavePLYOptions opts;
-    opts.write_vertex_normals = true;
-    opts.write_vertex_values = true;
-    opts.write_vertex_confidences = true;
-    mve::geom::save_ply_mesh(mesh, meshname, opts);
-    return mesh;
-}
-
-void reconstruct_sgm_depth_for_view ( smvs::StereoView::Ptr main_view,
-                                     std::vector<smvs::StereoView::Ptr> neighbors,
-                                     mve::Bundle::ConstPtr bundle = nullptr)
-{
-    smvs::SGMStereo::Options sgm_opts;
-
-    util::WallTimer sgm_timer;
-    mve::FloatImage::Ptr d1 = smvs::SGMStereo::reconstruct(sgm_opts, main_view,
-                                                           neighbors[0], bundle);
-    if (neighbors.size() > 1)
-    {
-        mve::FloatImage::Ptr d2 = smvs::SGMStereo::reconstruct(sgm_opts,
-                                                               main_view, neighbors[1], bundle);
-        for (int p = 0; p < d1->get_pixel_amount(); ++p)
-        {
-            if (d2->at(p) == 0.0f)
-                continue;
-            if (d1->at(p) == 0.0f)
-            {
-                d1->at(p) = d2->at(p);
-                continue;
-            }
-            d1->at(p) = (d1->at(p) + d2->at(p)) * 0.5f;
-        }
-    }
-
-    std::cout << "SGM took: " << sgm_timer.get_elapsed_sec()
-              << "sec" << std::endl;
-
-    main_view->write_depth_to_view(d1, "smvs-sgm");
-}
 
 MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, const wxPoint &pos,
                      const wxSize &size) : wxFrame(parent, id, title, pos, size) {
@@ -615,7 +535,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
         else
             input_name = UNDISTORTED_IMAGE_NAME;
 
-        std::string output_name = "smvs-B" + util::string::get(scale);
+        std::string dm_name = "smvs-B" + util::string::get(scale);
 
         /* Add views to reconstruction list */
         std::vector<int> reconstruction_list;
@@ -630,7 +550,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
                           << "skipping view." << std::endl;
                 continue;
             }
-            if (views[i]->has_image(output_name)) {
+            if (views[i]->has_image(dm_name)) {
                 std::cout << "View ID " << i << " already reconstructed, "
                           << "skipping view." << std::endl;
                 continue;
@@ -741,7 +661,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
         for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
             int const i = reconstruction_list[v];
             results.emplace_back(thread_pool.add_task(
-                [v, i, &views, &counter_mutex, &input_name, &output_name,
+                [v, i, &views, &counter_mutex, &input_name, &dm_name,
                     &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
                     this] {
                   smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, false, false);
@@ -777,13 +697,13 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
                           sgm_width
                       || views[i]->get_image_proxy("smvs-sgm")->height !=
                           sgm_height)
-                      reconstruct_sgm_depth_for_view(main_view, stereo_views, m_pScene->get_bundle());
+                      util::ReconstructSGMDepthForView(main_view, stereo_views, m_pScene->get_bundle());
 
                   smvs::DepthOptimizer::Options do_opts;
                   do_opts.regularization = 0.01;
                   do_opts.num_iterations = 5;
                   do_opts.min_scale = 3;
-                  do_opts.output_name = output_name;
+                  do_opts.output_name = dm_name;
                   do_opts.use_sgm = true;
                   smvs::DepthOptimizer optimizer(main_view, stereo_views,
                                                  m_pScene->get_bundle(), do_opts);
@@ -803,7 +723,8 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
                   << total_timer.get_elapsed() << "ms." << std::endl;
         std::cout << "Saving views back to disc..." << std::endl;
         m_pScene->save_views();
-        m_point_set = generate_mesh(m_pScene, input_name, output_name, false);
+
+        m_point_set = util::GenerateMeshSMVS(m_pScene, input_name, dm_name, scale, "mvs-point-set", false);
 
         // display cluster
         mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -832,6 +753,7 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     }
     util::WallTimer timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
+    int scale = get_scale_from_max_pixel(m_pScene, 0);
     if (views.empty()) {
         event.Skip();
         return;
@@ -841,7 +763,6 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
             if (views[id] == nullptr || !views[id]->is_camera_valid())
                 continue;
 
-            int scale = get_scale_from_max_pixel(m_pScene, id);
             mvs::Settings settings;
             settings.scale = scale;
             /* Setup MVS. */
@@ -862,105 +783,21 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
         }
     }
     std::cout << "Reconstruction took "
-              << timer.get_elapsed() << "ms." << std::endl;
+              << timer.get_elapsed() << "ms." << "\n";
     std::cout << "Saving views back to disc..." << std::endl;
     m_pScene->save_views();
-    std::string ply_path = util::fs::join_path(m_pScene->get_path(), "point-set.ply");
-    mve::TriangleMesh::Ptr point_set;
-    if (util::fs::file_exists(ply_path.c_str())) // skip point set reconstruction if ply is found
-        point_set = mve::geom::load_ply_mesh(ply_path);
-    else {
-        /* Prepare output mesh. */
-        point_set = mve::TriangleMesh::create();
-        mve::TriangleMesh::VertexList &verts(point_set->get_vertices());
-        mve::TriangleMesh::NormalList &vnorm(point_set->get_vertex_normals());
-        mve::TriangleMesh::ColorList &vcolor(point_set->get_vertex_colors());
-        mve::TriangleMesh::ValueList &vvalues(point_set->get_vertex_values());
-        mve::TriangleMesh::ConfidenceList &vconfs(point_set->get_vertex_confidences());
 
-
-#pragma omp parallel for schedule(dynamic)
-        for (std::size_t i = 0; i < views.size(); ++i) {
-            mve::View::Ptr view = views[i];
-            if (view == nullptr)
-                continue;
-
-            mve::CameraInfo const &cam = view->get_camera();
-            if (cam.flen == 0.0f)
-                continue;
-
-            int scale = get_scale_from_max_pixel(m_pScene, i);
-            mve::FloatImage::Ptr dm = view->get_float_image("depth-L" + std::to_string(scale));
-            if (dm == nullptr)
-                continue;
-
-            mve::ByteImage::Ptr ci;
-            if (scale != 0)
-                ci = view->get_byte_image("undist-L" + std::to_string(scale));
-            else
-                ci = view->get_byte_image("undistorted");
-
-#pragma omp critical
-            std::cout << "Processing view \"" << view->get_name()
-                      << "\"" << (ci != nullptr ? " (with colors)" : "")
-                      << "..." << std::endl;
-
-            /* Triangulate depth map. */
-            mve::TriangleMesh::Ptr mesh;
-
-            mve::Image<unsigned int> vertex_ids;
-            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids);
-
-            mve::TriangleMesh::VertexList const &mverts(mesh->get_vertices());
-            mve::TriangleMesh::NormalList const &mnorms(mesh->get_vertex_normals());
-            mve::TriangleMesh::ColorList const &mvcol(mesh->get_vertex_colors());
-            mve::TriangleMesh::ConfidenceList &mconfs(mesh->get_vertex_confidences());
-
-            mesh->ensure_normals();
-
-            mve::geom::depthmap_mesh_confidences(mesh, 3);
-
-            std::vector<float> mvscale;
-            mvscale.resize(mverts.size(), 0.0f);
-            mve::MeshInfo mesh_info(mesh);
-            for (std::size_t j = 0; j < mesh_info.size(); ++j) {
-                mve::MeshInfo::VertexInfo const &vinf = mesh_info[j];
-                for (unsigned long long vert : vinf.verts)
-                    mvscale[j] += (mverts[j] - mverts[vert]).norm();
-                mvscale[j] /= static_cast<float>(vinf.verts.size());
-                mvscale[j] *= scale;
-            }
-
-#pragma omp critical
-            {
-                verts.insert(verts.end(), mverts.begin(), mverts.end());
-                if (!mvcol.empty())
-                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-                if (!mnorms.empty())
-                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
-                if (!mvscale.empty())
-                    vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
-                if (!mconfs.empty())
-                    vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
-            }
-            dm.reset();
-            ci.reset();
-            view->cache_cleanup();
-        }
-        /* Write mesh to disc. */
-        mve::geom::SavePLYOptions opts;
-        opts.write_vertex_normals = true;
-        opts.write_vertex_values = true;
-        opts.write_vertex_confidences = true;
-        std::cout << "Writing final point set ("
-                  << verts.size() << " points)..." << std::endl;
-        mve::geom::save_ply_mesh(point_set, util::fs::join_path(m_pScene->get_path(), "point-set.ply"), opts);
-        m_point_set = point_set;
+    std::string input_name;
+    std::string dm_name = "depth-L" + std::to_string(scale);
+    if (scale != 0) {
+        input_name = "undist-L" + std::to_string(scale);
+    } else {
+        input_name = UNDISTORTED_IMAGE_NAME;
     }
-
+    m_point_set = util::GenerateMesh(m_pScene, input_name, dm_name, scale, "point-set");
     // display cluster
-    mve::TriangleMesh::VertexList &v_pos(point_set->get_vertices());
-    mve::TriangleMesh::ColorList &v_color(point_set->get_vertex_colors());
+    mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
     std::vector<Vertex> vertices(v_pos.size());
     glm::mat4 transform(1.0f);
     // inherit cluster's transform

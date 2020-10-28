@@ -1,6 +1,17 @@
 #include <Image.hpp>
 #include "Util.hpp"
 #include <algorithm>
+#include "util/file_system.h"
+#include "util/timer.h"
+#include "mve/mesh_info.h"
+#include "mve/mesh_io.h"
+#include "mve/mesh_io_ply.h"
+#include "thread_pool.h"
+#include "stereo_view.h"
+#include "depth_optimizer.h"
+#include "mesh_generator.h"
+#include "view_selection.h"
+#include "sgm_stereo.h"
 
 namespace util {
 
@@ -88,5 +99,194 @@ void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out,
     }
 }
 
-} // namespace util
+mve::TriangleMesh::Ptr GenerateMeshSMVS(mve::Scene::Ptr scene,
+                                        const std::string &input_name,
+                                        const std::string &dm_name,
+                                        int scale,
+                                        const std::string &output_name,
+                                        bool triangle_mesh) {
+    mve::TriangleMesh::Ptr mesh;
+    /* Build mesh name */
+    std::string ply_path;
+    if (util::string::right(output_name, 4) == ".ply") {
+        std::cout << ".ply file already exists, skipping mesh generation." << std::endl;
+        ply_path = util::fs::join_path(scene->get_path(), output_name);
+    } else {
+        ply_path = util::fs::join_path(scene->get_path(), output_name + "-L" + std::to_string(scale) + ".ply");
+    }
+    if (util::fs::file_exists(ply_path.c_str())) { // skip point set reconstruction if ply is found
+        std::cout << "The .ply file already exists, skipping mesh generation." << std::endl;
+        mesh = mve::geom::load_ply_mesh(ply_path);
+    } else {
+        std::cout << "Generating Mesh";
 
+        util::WallTimer timer;
+        mve::Scene::ViewList recon_views;
+        for (auto & i : scene->get_views())
+            recon_views.push_back(i);
+
+        std::cout << " for " << recon_views.size() << " views ..." << std::endl;
+
+        smvs::MeshGenerator::Options meshgen_opts;
+        meshgen_opts.num_threads = std::thread::hardware_concurrency();
+        meshgen_opts.cut_surfaces = true;
+        meshgen_opts.simplify = false;
+        meshgen_opts.create_triangle_mesh = false;
+
+        smvs::MeshGenerator meshgen(meshgen_opts);
+        mesh = meshgen.generate_mesh(recon_views, input_name, dm_name);
+        std::cout << "Done. Took: " << timer.get_elapsed_sec() << "s" << std::endl;
+
+        if(triangle_mesh)
+            mesh->recalc_normals();
+
+        /* Save mesh */
+        mve::geom::SavePLYOptions opts;
+        opts.write_vertex_normals = true;
+        opts.write_vertex_values = true;
+        opts.write_vertex_confidences = true;
+        std::cout << "Writing final point set to "<< ply_path << std::endl;
+        mve::geom::save_ply_mesh(mesh, ply_path, opts);
+    }
+    return mesh;
+}
+
+mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
+                                    const std::string &input_name,
+                                    const std::string &dm_name,
+                                    int scale,
+                                    const std::string &output_name) {
+    /* Build mesh name */
+    std::string ply_path;
+    if (util::string::right(output_name, 4) == ".ply") {
+        ply_path = util::fs::join_path(scene->get_path(), output_name);
+    } else {
+        ply_path = util::fs::join_path(scene->get_path(), output_name + "-L" + std::to_string(scale) + ".ply");
+    }
+    mve::TriangleMesh::Ptr point_set;
+    if (util::fs::file_exists(ply_path.c_str())) { // skip point set reconstruction if ply is found
+        std::cout << "The .ply file already exists, skipping mesh generation." << std::endl;
+        point_set = mve::geom::load_ply_mesh(ply_path);
+    } else {
+        mve::Scene::ViewList &views(scene->get_views());
+        /* Prepare output mesh. */
+        point_set = mve::TriangleMesh::create();
+        mve::TriangleMesh::VertexList &verts(point_set->get_vertices());
+        mve::TriangleMesh::NormalList &vnorm(point_set->get_vertex_normals());
+        mve::TriangleMesh::ColorList &vcolor(point_set->get_vertex_colors());
+        mve::TriangleMesh::ValueList &vvalues(point_set->get_vertex_values());
+        mve::TriangleMesh::ConfidenceList &vconfs(point_set->get_vertex_confidences());
+
+
+#pragma omp parallel for schedule(dynamic)
+        for (std::size_t i = 0; i < views.size(); ++i) {
+            mve::View::Ptr view = views[i];
+            if (view == nullptr)
+                continue;
+
+            mve::CameraInfo const &cam = view->get_camera();
+            if (cam.flen == 0.0f)
+                continue;
+
+            mve::FloatImage::Ptr dm = view->get_float_image(dm_name);
+            if (dm == nullptr) {
+#pragma omp critical
+                std::cout << "Depth map not found, skipping view ID: " << i << std::endl;
+                continue;
+            }
+
+            mve::ByteImage::Ptr ci = view->get_byte_image(input_name);
+            if (ci == nullptr) {
+#pragma omp critical
+                std::cout << "Input image not found, skipping view ID: " << i << std::endl;
+                std::cout << std::endl;
+                continue;
+            }
+
+#pragma omp critical
+            std::cout << "Processing view \"" << view->get_name()
+                      << "\"" << (ci != nullptr ? " (with colors)" : "")
+                      << "..." << std::endl;
+
+            /* Triangulate depth map. */
+            mve::TriangleMesh::Ptr mesh;
+
+            mve::Image<unsigned int> vertex_ids;
+            mesh = mve::geom::depthmap_triangulate(dm, ci, cam, mve::geom::DD_FACTOR_DEFAULT, &vertex_ids);
+
+            mve::TriangleMesh::VertexList const &mverts(mesh->get_vertices());
+            mve::TriangleMesh::NormalList const &mnorms(mesh->get_vertex_normals());
+            mve::TriangleMesh::ColorList const &mvcol(mesh->get_vertex_colors());
+            mve::TriangleMesh::ConfidenceList &mconfs(mesh->get_vertex_confidences());
+
+            mesh->ensure_normals();
+
+            mve::geom::depthmap_mesh_confidences(mesh, 3);
+
+            std::vector<float> mvscale;
+            mvscale.resize(mverts.size(), 0.0f);
+            mve::MeshInfo mesh_info(mesh);
+            for (std::size_t j = 0; j < mesh_info.size(); ++j) {
+                mve::MeshInfo::VertexInfo const &vinf = mesh_info[j];
+                for (unsigned long long vert : vinf.verts)
+                    mvscale[j] += (mverts[j] - mverts[vert]).norm();
+                mvscale[j] /= static_cast<float>(vinf.verts.size());
+                mvscale[j] *= scale;
+            }
+
+#pragma omp critical
+            {
+                verts.insert(verts.end(), mverts.begin(), mverts.end());
+                if (!mvcol.empty())
+                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
+                if (!mnorms.empty())
+                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+                if (!mvscale.empty())
+                    vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
+                if (!mconfs.empty())
+                    vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+            }
+            dm.reset();
+            ci.reset();
+            view->cache_cleanup();
+        }
+        /* Write mesh to disc. */
+        mve::geom::SavePLYOptions opts;
+        opts.write_vertex_normals = true;
+        opts.write_vertex_values = true;
+        opts.write_vertex_confidences = true;
+        std::cout << "Writing final point set to "<< ply_path << std::endl;
+        mve::geom::save_ply_mesh(point_set, ply_path, opts);
+    }
+    return point_set;
+}
+
+void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
+                                std::vector<smvs::StereoView::Ptr> neighbors,
+                                mve::Bundle::ConstPtr bundle) {
+    smvs::SGMStereo::Options sgm_opts;
+
+    util::WallTimer sgm_timer;
+    mve::FloatImage::Ptr d1 = smvs::SGMStereo::reconstruct(sgm_opts, main_view,
+                                                           neighbors[0], bundle);
+    if (neighbors.size() > 1) {
+        mve::FloatImage::Ptr d2 = smvs::SGMStereo::reconstruct(sgm_opts,
+                                                               main_view, neighbors[1], bundle);
+        for (int p = 0; p < d1->get_pixel_amount(); ++p) {
+            if (d2->at(p) == 0.0f)
+                continue;
+            if (d1->at(p) == 0.0f) {
+                d1->at(p) = d2->at(p);
+                continue;
+            }
+            d1->at(p) = (d1->at(p) + d2->at(p)) * 0.5f;
+        }
+    }
+
+    std::cout << "SGM took: " << sgm_timer.get_elapsed_sec()
+              << "sec" << std::endl;
+
+    main_view->write_depth_to_view(d1, "smvs-sgm");
+}
+
+} // namespace util
