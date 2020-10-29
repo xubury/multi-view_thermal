@@ -42,7 +42,8 @@ mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img);
 
 bool features_and_matching(mve::Scene::Ptr scene,
                            sfm::bundler::ViewportList *viewports,
-                           sfm::bundler::PairwiseMatching *pairwise_matching);
+                           sfm::bundler::PairwiseMatching *pairwise_matching,
+                           sfm::FeatureSet::FeatureTypes feature_type);
 
 int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, int id);
 

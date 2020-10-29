@@ -280,7 +280,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching)) {
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_SURF)) {
             event.Skip();
             return; // no feature match
         }
@@ -702,9 +702,13 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
               do_opts.min_scale = 3;
               do_opts.output_name = dm_name;
               do_opts.use_sgm = true;
-              smvs::DepthOptimizer optimizer(main_view, stereo_views,
-                                             m_pScene->get_bundle(), do_opts);
-              optimizer.optimize();
+              try {
+                  smvs::DepthOptimizer optimizer(main_view, stereo_views,
+                                                 m_pScene->get_bundle(), do_opts);
+                  optimizer.optimize();
+              } catch (std::exception &e) {
+                  std::cout << e.what() << std::endl;
+              }
 
               std::unique_lock<std::mutex> lock2(counter_mutex);
               std::cout << "\rFinished "

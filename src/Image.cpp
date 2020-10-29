@@ -144,48 +144,14 @@ void find_min_max_percentile(typename mve::Image<T>::ConstPtr image,
     *vmax = copy->at(9 * copy->get_value_amount() / 10);
 }
 
-mve::ByteImage::Ptr create_thumbnail(mve::ImageBase::ConstPtr img) {
-    mve::ByteImage::Ptr image;
-    switch (img->get_type()) {
-    case mve::IMAGE_TYPE_UINT8:
-        image = mve::image::create_thumbnail<uint8_t>
-            (std::dynamic_pointer_cast<mve::ByteImage const>(img),
-             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-        break;
-
-    case mve::IMAGE_TYPE_UINT16: {
-        mve::RawImage::Ptr temp = mve::image::create_thumbnail<uint16_t>
-            (std::dynamic_pointer_cast<mve::RawImage const>(img),
-             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-        uint16_t vmin, vmax;
-        find_min_max_percentile(temp, &vmin, &vmax);
-        image = mve::image::raw_to_byte_image(temp, vmin, vmax);
-        break;
-    }
-
-    case mve::IMAGE_TYPE_FLOAT: {
-        mve::FloatImage::Ptr temp = mve::image::create_thumbnail<float>
-            (std::dynamic_pointer_cast<mve::FloatImage const>(img),
-             THUMBNAIL_SIZE, THUMBNAIL_SIZE);
-        float vmin, vmax;
-        find_min_max_percentile(temp, &vmin, &vmax);
-        image = mve::image::float_to_byte_image(temp, vmin, vmax);
-        break;
-    }
-
-    default:return mve::ByteImage::Ptr();
-    }
-
-    return image;
-}
-
 bool features_and_matching(mve::Scene::Ptr scene,
                            sfm::bundler::ViewportList *viewports,
-                           sfm::bundler::PairwiseMatching *pairwise_matching) {
+                           sfm::bundler::PairwiseMatching *pairwise_matching,
+                           sfm::FeatureSet::FeatureTypes feature_type) {
     sfm::bundler::Features::Options feature_opts;
     feature_opts.image_embedding = ORIGINAL_IMAGE_NAME;
     feature_opts.max_image_size = MAX_IMAGE_SIZE;
-    feature_opts.feature_options.feature_types = sfm::FeatureSet::FEATURE_ALL;
+    feature_opts.feature_options.feature_types = feature_type;
 
     std::cout << "Computing image feature..." << std::endl;
     {
