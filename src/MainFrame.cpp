@@ -699,7 +699,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
               smvs::DepthOptimizer::Options do_opts;
               do_opts.regularization = 0.01;
               do_opts.num_iterations = 5;
-              do_opts.min_scale = 3;
+              do_opts.min_scale = 2;
               do_opts.output_name = dm_name;
               do_opts.use_sgm = true;
               try {
