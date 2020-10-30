@@ -87,7 +87,7 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
         try {
             m_pScene = mve::Scene::create(aPath);
         } catch (const std::exception &e) {
-            std::cout << "Error Loading Scene: " << e.what() << std::endl;
+            wxLogMessage(_("Error loading scene."));
             event.Skip();
             return;
         }
