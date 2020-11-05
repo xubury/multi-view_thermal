@@ -33,7 +33,6 @@
 *.app
 
 
-
-
-
+# External libs
 elibs/mve
+elibs/smvs
