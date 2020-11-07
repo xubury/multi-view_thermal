@@ -1,6 +1,7 @@
-import cv2
 import numpy as np
 import glob
+import os
+import cv2
 
 def get_points(size):
     # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
@@ -25,6 +26,10 @@ def get_points(size):
         img = cv2.imread(fname)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        #  findCirclesGrid only detect Dark Color, so revert color here.
+        full_white = np.ones(gray.shape, dtype=np.uint8) * 255;
+        gray = np.array(full_white - gray);
+
         params = cv2.SimpleBlobDetector_Params()
         params.maxArea = 10e4
         params.minArea = 10
@@ -40,10 +45,9 @@ def get_points(size):
 
             # Draw and display the corners
             cv2.drawChessboardCorners(img, size, corners, ret)
-            #write_name = 'corners_found'+str(idx)+'.jpg'
-            #cv2.imwrite(write_name, img)
-            cv2.imshow('img' + str(idx), img)
-            cv2.waitKey(0)
+            write_name = 'corners/corners_found'+str(idx)+'.jpg'
+            cv2.imwrite(write_name, img)
+
         else:
             print("no circle found.")
 
@@ -52,4 +56,3 @@ def get_points(size):
 
 
 obj, img = get_points((3, 9))
-print(img)

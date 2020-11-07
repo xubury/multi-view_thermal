@@ -280,7 +280,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_SURF)) {
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_ALL)) {
             event.Skip();
             return; // no feature match
         }
