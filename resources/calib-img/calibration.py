@@ -79,8 +79,7 @@ def undistort_image(path, images, matrix, dist):
 def K_to_homogenous_matrix(K):
     K = np.vstack((K, [0, 0, 0]));
     K = np.hstack((K, [[0], [0], [0], [1]]));
-    K = np.matrix(K)
-    return K
+    return np.matrix(K)
 
 def Rt_to_homogeneous_matrix(R, t, Rodrigues = True):
     if Rodrigues:
@@ -89,13 +88,13 @@ def Rt_to_homogeneous_matrix(R, t, Rodrigues = True):
         rvec = R
     transform = np.hstack((rvec, t))
     transform = np.vstack((transform, [0, 0, 0, 1]));
-    transform = np.matrix(transform)
-    return transform
+    return np.matrix(transform)
 
 
+# calculate the transform from L to R
 def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
     W = K_r * Rt_r * Rt_l.I * K_l.I
-    return W
+    return np.matrix(W)
 
 # Thermal images
 print("Running thermal images calibration...")
@@ -132,6 +131,8 @@ normal = cv2.imread(images[0])
 thermal = cv2.imread(t_images[0])
 (height, width, c) = normal.shape
 
+
+#  z_R * [u_R, v_R, 1, 1/z_R]^T = W * z_L * [u_L, v_L, 1, 1/z_L]^T
 normal_image_pos = np.zeros((4, width * height), np.float32)
 normal_image_pos[0,:] = np.tile(np.arange(width),height)
 normal_image_pos[1,:] = np.repeat(np.arange(height),width)
@@ -145,8 +146,10 @@ x_map = thermal_test_img_pos[0].reshape(height, width).astype(np.float32)
 y_map = thermal_test_img_pos[1].reshape(height,width).astype(np.float32)
 
 thermal_mapped = cv2.remap(thermal, x_map, y_map , cv2.INTER_LINEAR)
-normal = cv2.addWeighted(normal, 0.4, thermal_mapped, 0.8, 0.2)
+merged = cv2.addWeighted(normal, 0.4, thermal_mapped, 0.8, 0.2)
+cv2.imwrite("merged.jpg", merged)
 
+# Test a Point Here
 u = img_pos[0][0][0]
 v = img_pos[0][0][1]
 normal_test_img_pos = np.array([u, v, 1, 1 / z]).reshape(4, 1)
@@ -157,4 +160,3 @@ x = estimate_pos[0]
 y = estimate_pos[1]
 print("Estimate:", x, y)
 print("Real:", t_img_pos[0][0])
-cv2.imwrite("test.jpg", normal)
