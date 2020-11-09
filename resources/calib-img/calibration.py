@@ -76,22 +76,85 @@ def undistort_image(path, images, matrix, dist):
         write_name = str(idx)+'.jpg'
         cv2.imwrite(os.path.join(output_path, write_name), img)
 
-# Thermal images
-t_images, t_obj_pos, t_img_pos, shape = get_points("thermal-img", (3, 9), False)
-ret, t_matrix, t_dist, _, _ = cv2.calibrateCamera(t_obj_pos, t_img_pos, shape, None, None)
-undistort_image("thermal-img", t_images, t_matrix, t_dist)
-ret, t_rvec, t_tvec, _ = cv2.solvePnPRansac(np.float64(t_obj_pos[0]), np.float32(t_img_pos[0]), t_matrix, t_dist, None, None)
-t_rvec = cv2.Rodrigues(t_rvec, None)
+def K_to_homogenous_matrix(K):
+    K = np.vstack((K, [0, 0, 0]));
+    K = np.hstack((K, [[0], [0], [0], [1]]));
+    K = np.matrix(K)
+    return K
 
-print(t_rvec[0])
-print(t_tvec)
+def Rt_to_homogeneous_matrix(R, t, Rodrigues = True):
+    if Rodrigues:
+        rvec, _= cv2.Rodrigues(R, None)
+    else:
+        rvec = R
+    transform = np.hstack((rvec, t))
+    transform = np.vstack((transform, [0, 0, 0, 1]));
+    transform = np.matrix(transform)
+    return transform
+
+
+def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
+    W = K_r * Rt_r * Rt_l.I * K_l.I
+    return W
+
+# Thermal images
+print("Running thermal images calibration...")
+t_images, t_obj_pos, t_img_pos, shape = get_points("thermal-img", (3, 9), False)
+ret, thermal_K, t_dist, thermal_rvecs, thermal_tvecs = cv2.calibrateCamera(t_obj_pos, t_img_pos, shape, None, None)
+undistort_image("thermal-img", t_images, thermal_K, t_dist)
+print("Done!")
+
+thermal_transform = Rt_to_homogeneous_matrix(thermal_rvecs[0], thermal_tvecs[0])
+print(thermal_transform)
+
+thermal_K = K_to_homogenous_matrix(thermal_K)
+print(thermal_K)
 
 # Normal images
+print("Running normal images calibration...")
 images, obj_pos, img_pos, shape = get_points("normal-img", (3, 9), True)
-ret, matrix, dist, _, _ = cv2.calibrateCamera(obj_pos, img_pos, shape, None, None)
-undistort_image("normal-img", images, matrix, dist)
-ret, rvec, tvec, _ = cv2.solvePnPRansac(np.float64(obj_pos[0]), np.float32(img_pos[0]), matrix, dist, None, None)
-rvec = cv2.Rodrigues(rvec, None)
+ret, normal_K, dist, normal_rvecs, normal_tvecs = cv2.calibrateCamera(obj_pos, img_pos, shape, None, None)
+undistort_image("normal-img", images, normal_K, dist)
+print("Done!")
 
-print(rvec[0])
-print(tvec)
+normal_transform = Rt_to_homogeneous_matrix(normal_rvecs[0], normal_tvecs[0])
+print(normal_transform)
+
+normal_K = K_to_homogenous_matrix(normal_K)
+print(normal_K)
+
+W = calculate_W_L_to_R(normal_K, normal_transform, thermal_K, thermal_transform);
+print(W)
+
+
+z = np.array(normal_transform)[2][3]
+normal = cv2.imread(images[0])
+thermal = cv2.imread(t_images[0])
+(height, width, c) = normal.shape
+
+normal_image_pos = np.zeros((4, width * height), np.float32)
+normal_image_pos[0,:] = np.tile(np.arange(width),height)
+normal_image_pos[1,:] = np.repeat(np.arange(height),width)
+normal_image_pos[2,:] = 1
+normal_image_pos[3,:] = 1/z
+thermal_test_img_pos = W * normal_image_pos
+
+thermal_test_img_pos = thermal_test_img_pos / thermal_test_img_pos[2]
+
+x_map = thermal_test_img_pos[0].reshape(height, width).astype(np.float32)
+y_map = thermal_test_img_pos[1].reshape(height,width).astype(np.float32)
+
+thermal_mapped = cv2.remap(thermal, x_map, y_map , cv2.INTER_LINEAR)
+normal = cv2.addWeighted(normal, 0.4, thermal_mapped, 0.8, 0.2)
+
+u = img_pos[0][0][0]
+v = img_pos[0][0][1]
+normal_test_img_pos = np.array([u, v, 1, 1 / z]).reshape(4, 1)
+thermal_test_img_pos = W * normal_test_img_pos
+print("Input:", u, v)
+estimate_pos = thermal_test_img_pos / thermal_test_img_pos[2]
+x = estimate_pos[0]
+y = estimate_pos[1]
+print("Estimate:", x, y)
+print("Real:", t_img_pos[0][0])
+cv2.imwrite("test.jpg", normal)
