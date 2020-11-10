@@ -103,7 +103,10 @@ ret, thermal_K, t_dist, thermal_rvecs, thermal_tvecs = cv2.calibrateCamera(t_obj
 undistort_image("thermal-img", t_images, thermal_K, t_dist)
 print("Done!")
 
-thermal_transform = Rt_to_homogeneous_matrix(thermal_rvecs[0], thermal_tvecs[0])
+
+Rt_to_use = 0
+
+thermal_transform = Rt_to_homogeneous_matrix(thermal_rvecs[Rt_to_use], thermal_tvecs[Rt_to_use])
 print(thermal_transform)
 
 thermal_K = K_to_homogenous_matrix(thermal_K)
@@ -116,7 +119,7 @@ ret, normal_K, dist, normal_rvecs, normal_tvecs = cv2.calibrateCamera(obj_pos, i
 undistort_image("normal-img", images, normal_K, dist)
 print("Done!")
 
-normal_transform = Rt_to_homogeneous_matrix(normal_rvecs[0], normal_tvecs[0])
+normal_transform = Rt_to_homogeneous_matrix(normal_rvecs[Rt_to_use], normal_tvecs[Rt_to_use])
 print(normal_transform)
 
 normal_K = K_to_homogenous_matrix(normal_K)
@@ -124,7 +127,6 @@ print(normal_K)
 
 W = calculate_W_L_to_R(normal_K, normal_transform, thermal_K, thermal_transform);
 print(W)
-
 
 z = np.array(normal_transform)[2][3]
 normal = cv2.imread(images[0])
