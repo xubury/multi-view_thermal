@@ -33,6 +33,9 @@ public:
         MENU_DEPTH_RECON,
         MENU_DEPTH_RECON_OLD,
         MENU_FSS_RECON,
+
+
+        MENU_GENERATE_DEPTH_IMG
     };
 private:
     void OnMenuOpenScene(wxCommandEvent &event);
@@ -44,6 +47,8 @@ private:
     void OnMenuDepthReconSMVS(wxCommandEvent &event);
 
     void OnMenuDepthRecon(wxCommandEvent &event);
+
+    void OnMenuGenerateDepthImage(wxCommandEvent &event);
 
     /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
     void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);

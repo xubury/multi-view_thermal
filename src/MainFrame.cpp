@@ -67,6 +67,9 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_OLD, _("Depth Map Generation"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthRecon, this, MENU::MENU_DEPTH_RECON_OLD);
 
+    pOperateMenu->Append(MENU::MENU_GENERATE_DEPTH_IMG, _("Depth Image Generation"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuGenerateDepthImage, this, MENU::MENU_GENERATE_DEPTH_IMG);
+
     pMenuBar->Append(pFileMenu, _("File"));
     pMenuBar->Append(pOperateMenu, _("Operation"));
 
@@ -808,5 +811,28 @@ void MainFrame::OnMenuDepthRecon(wxCommandEvent &event) {
     m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
 
+    event.Skip();
+}
+void MainFrame::OnMenuGenerateDepthImage(wxCommandEvent &event) {
+    int scale = get_scale_from_max_pixel(m_pScene, 0);
+    std::string dm_name = "smvs-B" + std::to_string(scale) ;
+    float max = std::numeric_limits<float>::min();
+    float min = std::numeric_limits<float>::max();
+    for (const auto &view : m_pScene->get_views()) {
+        if (!view->has_image(dm_name)) {
+            continue;
+        }
+        mve::FloatImage::Ptr depth_img = view->get_float_image(dm_name);
+        max = std::max(max, *std::max_element(depth_img->begin(), depth_img->end()));
+        min = std::min(min, *std::min_element(depth_img->begin(), depth_img->end()));
+    }
+    for (const auto &view : m_pScene->get_views()) {
+        if (!view->has_image(dm_name)) {
+            continue;
+        }
+        mve::FloatImage::Ptr depth_img = view->get_float_image(dm_name);
+        mve::image::save_file(mve::image::float_to_byte_image(depth_img, min, max),
+                              util::fs::join_path(view->get_directory(), dm_name + ".jpg"));
+    }
     event.Skip();
 }
