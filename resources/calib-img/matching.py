@@ -23,11 +23,19 @@ print(calibrator.thermal_Rt[0])
 print("visual Rt[0]:")
 print(calibrator.visual_Rt[0])
 
-W = calculate_W_L_to_R(calibrator.visual_K_homo, calibrator.visual_Rt[0], calibrator.thermal_K_homo, calibrator.thermal_Rt[0]);
+pose_id = 0
+#  Note: In the 3d reconstruction, images are usually scaled
+#  Therefore, K matrix needs to be scaled too if scaled images are used 
+scale_factor = 1 
+K_homo = calibrator.visual_K_homo.copy()
+K_homo[0] *= scale_factor
+K_homo[1] *= scale_factor
+
+W = calculate_W_L_to_R(K_homo, calibrator.visual_Rt[pose_id], calibrator.thermal_K_homo, calibrator.thermal_Rt[pose_id]);
 print("W martix:")
 print(W)
 
-z = np.array(calibrator.visual_Rt[0])[2][3]
+z = np.array(calibrator.visual_Rt[pose_id])[2][3]
 thermal = cv2.imread("1.jpg")
 visual = cv2.imread("2.jpg")
 (height, width, c) = visual.shape
@@ -55,7 +63,6 @@ depth_img = cv2.imread("smvs-B2.jpg", cv2.IMREAD_GRAYSCALE)
 dp_height, dp_width = depth_img.shape
 
 depth_img = cv2.resize(depth_img, (width, height))
-depth_img = depth_img * 20000
 depth_img[depth_img == 0] = 1
 
 #  z_R * [u_R, v_R, 1, 1/z_R]^T = W * z_L * [u_L, v_L, 1, 1/z_L]^T
