@@ -1,7 +1,18 @@
 import numpy as np
 import cv2
-import utils
 import os
+import img_glob
+
+def undistort_image(output_path, images, matrix, dist):
+    output_path = os.path.join(output_path, "undistorted")
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+
+    for idx, fname in enumerate(images):
+        img = cv2.imread(fname)
+        img = cv2.undistort(img, matrix, dist, None, None)
+        write_name = str(idx)+'.jpg'
+        cv2.imwrite(os.path.join(output_path, write_name), img)
 
 class ThermalVisualCalibrator():
     thermal_path = ""
@@ -55,7 +66,7 @@ class ThermalVisualCalibrator():
         imgpoints = [] # 2d points in image plane.
 
         # Make a list of calibration images
-        images = utils.search_all_files_return_by_time_reversed(os.path.join(path, "*.jpg"))
+        images = img_glob.search_files_by_time(path, "*.jpg")
         # Step through the list and search for chessboard corners
         output_path = os.path.join(path, "corners")
         if not os.path.exists(output_path):

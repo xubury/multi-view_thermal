@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 import calibration
-import utils
 
 # calculate the transform from L to R
 def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
@@ -10,8 +9,8 @@ def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
 
 calibrator = calibration.ThermalVisualCalibrator("thermal-img", "normal-img", (3, 9), 25, 50)
 calibrator.StartCalibration()
-utils.undistort_image("normal-img", calibrator.visual_images_list, calibrator.visual_K, calibrator.visual_dist)
-utils.undistort_image("thermal-img", calibrator.thermal_images_list, calibrator.thermal_K, calibrator.thermal_dist)
+calibration.undistort_image("normal-img", calibrator.visual_images_list, calibrator.visual_K, calibrator.visual_dist)
+calibration.undistort_image("thermal-img", calibrator.thermal_images_list, calibrator.thermal_K, calibrator.thermal_dist)
 
 print("thermal K (homogeneous):")
 print(calibrator.thermal_K_homo)
