@@ -10,12 +10,11 @@ def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
 
 
 class Matching():
-    scale_factor = 1
-    calibrator = calibration.ThermalVisualCalibrator("thermal-img", "normal-img", (3, 9), 2, 1)
+    calibrator = 0
     W =  np.eye(4)
 
-    def __init__(self, scale_factor):
-        self.scale_factor = scale_factor
+    def __init__(self, scale_factor, h_step, v_step):
+        self.calibrator = calibration.ThermalVisualCalibrator("thermal-img", "normal-img", (3, 9), h_step, v_step)
         
         self.calibrator.StartCalibration()
         calibration.undistort_image("normal-img", self.calibrator.visual_images_list, self.calibrator.visual_K, self.calibrator.visual_dist)
@@ -28,8 +27,8 @@ class Matching():
         print(self.calibrator.thermal_K_homo)
         print("visual K (homogeneous):")
         K_homo = self.calibrator.visual_K_homo.copy()
-        K_homo[0] /= self.scale_factor
-        K_homo[1] /= self.scale_factor
+        K_homo[0] /= scale_factor
+        K_homo[1] /= scale_factor
         print(K_homo)
 
         pose_id = 0
@@ -42,7 +41,7 @@ class Matching():
         print("W martix:")
         print(self.W)
 
-    def match_thermal_to_visual(self, visual_name, thermal_name, dm_name, output_name):
+    def match_thermal_to_visual(self, visual_name, thermal_name, dm_name, output_name, depth_scale):
 
         visual = cv2.imread(visual_name)
         thermal = cv2.imread(thermal_name)
@@ -54,7 +53,7 @@ class Matching():
 
         depth_img = np.array(depth_img)
         depth_img = depth_img.reshape(dp_height, dp_width)
-        depth_img *= 3.818038039
+        depth_img *= depth_scale
         depth_img[depth_img == 0] = 1
 
         visual_image_pos = np.zeros((4, width * height), np.float32)

@@ -21,7 +21,8 @@ for idx, name in enumerate(thermal_images_list):
             break
 
 
-matcher = matching.Matching(2**sclae_factor)
+# the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
+matcher = matching.Matching(2**sclae_factor, 50, 25)
 
 for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
@@ -30,7 +31,8 @@ for mve_view_dir in mve_entris:
             visual_name = os.path.join(mve_view_dir, "undist-L2.png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged.jpg")
-            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name)
+            # 104 converts the depth value unit to mm(millimeter)
+            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104) 
             break
 
 
