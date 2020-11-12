@@ -32,6 +32,9 @@ public:
         MENU_DO_SFM,
         MENU_DEPTH_RECON,
         MENU_DEPTH_RECON_OLD,
+
+        MENU_DEPTH_TO_PSET,
+        MENU_DEPTH_TO_PSET_THERMAL,
         MENU_FSS_RECON,
 
 
@@ -46,7 +49,7 @@ private:
 
     void OnMenuDepthReconSMVS(wxCommandEvent &event);
 
-    void OnMenuDepthRecon(wxCommandEvent &event);
+    void OnMenuDepthToPointSet(wxCommandEvent &event);
 
     void OnMenuGenerateDepthImage(wxCommandEvent &event);
 
@@ -59,6 +62,9 @@ private:
 
     /** The pointer that hold all the data(image, death map...etc)*/
     mve::Scene::Ptr m_pScene;
+
+    /** Image down scale factor for speeding up calculation */
+    int m_scale;
 
     /** The pointer to OpenGL render target */
     Cluster::Ptr m_pCluster;

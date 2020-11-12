@@ -188,8 +188,8 @@ bool features_and_matching(mve::Scene::Ptr scene,
     }
 }
 
-int get_scale_from_max_pixel(const mve::Scene::Ptr &scene, int id) {
-    mve::View::Ptr view = scene->get_view_by_id(id);
+int get_scale_from_max_pixel(const mve::Scene::Ptr &scene) {
+    mve::View::Ptr view = scene->get_views().front();
     if (view == nullptr)
         return 0;
 
