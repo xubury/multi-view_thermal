@@ -216,7 +216,7 @@ void MainFrame::OnMenuNewScene(wxCommandEvent &event) {
 
         SetStatusText(scenePath);
         DisplaySceneImage(ORIGINAL_IMAGE_NAME, m_originalImageList);
-
+        m_scale = get_scale_from_max_pixel(m_pScene);
         m_pGLPanel->ClearObjects<Frustum>();
         m_pGLPanel->ClearObject(m_pCluster);
     }
