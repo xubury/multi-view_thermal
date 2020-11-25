@@ -66,7 +66,7 @@ class ThermalVisualCalibrator():
         imgpoints = [] # 2d points in image plane.
 
         # Make a list of calibration images
-        images = img_glob.search_files_by_time(path, "*.jpg")
+        images = img_glob.search_files_by_name(path, "*.jpg")
         # Step through the list and search for chessboard corners
         output_path = os.path.join(path, "corners")
         if not os.path.exists(output_path):
@@ -74,7 +74,9 @@ class ThermalVisualCalibrator():
         for idx, fname in enumerate(images):
             if verbose:
                 print("read in:", fname)
+            
             img = cv2.imread(fname)
+            os.rename(fname, os.path.join(path, str(idx)+".jpg"))
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             shape = gray.shape
 

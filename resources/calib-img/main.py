@@ -4,6 +4,10 @@ import os
 import shutil
 import re
 
+test = img_glob.search_files_by_name("thermal-img", "*.jpg")
+for name in test:
+    print(name)
+
 mve_dir = "E:/normal-img/scene/views"
 thermal_dir = "E:/recon_image/11-7/thermal/4"
 sclae_factor = 2
@@ -32,7 +36,7 @@ for mve_view_dir in mve_entris:
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged.jpg")
             # 104 converts the depth value unit to mm(millimeter)
-            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104) 
+            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
             break
 
 

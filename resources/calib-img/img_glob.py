@@ -11,6 +11,14 @@ def search_files_by_time(path, regex, reverse = False):
     files = sorted(glob.glob(regex), key=lambda x: os.path.getmtime(x), reverse = reverse)
     return files
 
+def remove_suffix(s):
+    return s[:s.rfind(".")]
+
+def search_files_by_name(path, regex, reverse = False):
+    regex = os.path.join(path, regex)
+    files = sorted(glob.glob(regex), key=lambda x: int(remove_suffix(os.path.basename(x))), reverse = reverse)
+    return files
+
 
 def read_mvei_file(path):
     with open(path, "rb") as file:
