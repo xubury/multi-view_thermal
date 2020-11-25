@@ -7,10 +7,12 @@ def undistort_image(output_path, images, matrix, dist):
     output_path = os.path.join(output_path, "undistorted")
     if not os.path.exists(output_path):
         os.mkdir(output_path)
-
+    img = cv2.imread(images[0])
+    (height, width, c) = img.shape
+    (map1, map2) = cv2.initUndistortRectifyMap(matrix, dist, None, None, (width, height), cv2.CV_32FC1)
     for idx, fname in enumerate(images):
         img = cv2.imread(fname)
-        img = cv2.undistort(img, matrix, dist, None, None)
+        img = cv2.remap(img, map1, map2, cv2.INTER_LINEAR)
         write_name = str(idx)+'.jpg'
         cv2.imwrite(os.path.join(output_path, write_name), img)
 
