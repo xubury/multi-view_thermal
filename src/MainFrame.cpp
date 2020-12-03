@@ -664,7 +664,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
             [v, i, &views, &counter_mutex, &input_name, &dm_name,
                 &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
                 this] {
-              smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, false, false);
+              smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, true, true);
               mve::Scene::ViewList neighbors = view_neighbors[v];
 
               std::vector<smvs::StereoView::Ptr> stereo_views;
@@ -684,7 +684,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
               for (std::size_t n = 0; n < view_select_opts.num_neighbors
                   && n < neighbors.size(); ++n) {
                   smvs::StereoView::Ptr sv = smvs::StereoView::create(
-                      neighbors[n], input_name);
+                      neighbors[n], input_name, true, true);
                   stereo_views.push_back(sv);
               }
 
@@ -705,6 +705,8 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
               do_opts.min_scale = 2;
               do_opts.output_name = dm_name;
               do_opts.use_sgm = true;
+              do_opts.use_shading = true;
+
               try {
                   smvs::DepthOptimizer optimizer(main_view, stereo_views,
                                                  m_pScene->get_bundle(), do_opts);
@@ -768,8 +770,16 @@ void MainFrame::OnMenuDepthToPointSet(wxCommandEvent &event) {
     Refresh();
     event.Skip();
 }
+
 void MainFrame::OnMenuGenerateDepthImage(wxCommandEvent &event) {
-    std::string dm_name = "img-smvs-B" + std::to_string(m_scale) ;
+    std::string dm_name = "smvs-B" + std::to_string(m_scale) ;
+    std::string sgm_name = "smvs-sgm";
+    GenerateDepthJPEG(dm_name);
+    GenerateDepthJPEG(sgm_name);
+    event.Skip();
+}
+
+void MainFrame::GenerateDepthJPEG(const std::string &dm_name) {
     float max = std::numeric_limits<float>::min();
     float min = std::numeric_limits<float>::max();
     for (const auto &view : m_pScene->get_views()) {
@@ -779,14 +789,7 @@ void MainFrame::OnMenuGenerateDepthImage(wxCommandEvent &event) {
         mve::FloatImage::Ptr depth_img = view->get_float_image(dm_name);
         max = std::max(max, *std::max_element(depth_img->begin(), depth_img->end()));
         min = std::min(min, *std::min_element(depth_img->begin(), depth_img->end()));
-    }
-    for (const auto &view : m_pScene->get_views()) {
-        if (!view->has_image(dm_name)) {
-            continue;
-        }
-        mve::FloatImage::Ptr depth_img = view->get_float_image(dm_name);
         mve::image::save_file(mve::image::float_to_byte_image(depth_img, min, max),
-                              util::fs::join_path(view->get_directory(), dm_name + ".jpg"));
+                              util::fs::join_path(view->get_directory(), "img-" + dm_name + ".jpg"));
     }
-    event.Skip();
 }

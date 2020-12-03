@@ -71,6 +71,7 @@ private:
 
     /** The pointer to mvs construct result*/
     mve::TriangleMesh::Ptr m_point_set;
+    void GenerateDepthJPEG(const std::string &dm_name);
 };
 
 #endif //_MAIN_FRAME_HPP
