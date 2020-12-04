@@ -774,22 +774,20 @@ void MainFrame::OnMenuDepthToPointSet(wxCommandEvent &event) {
 void MainFrame::OnMenuGenerateDepthImage(wxCommandEvent &event) {
     std::string dm_name = "smvs-B" + std::to_string(m_scale) ;
     std::string sgm_name = "smvs-sgm";
-    GenerateDepthJPEG(dm_name);
-    GenerateDepthJPEG(sgm_name);
+    GenerateJPEGFromMVEI(dm_name);
+    GenerateJPEGFromMVEI(sgm_name);
     event.Skip();
 }
 
-void MainFrame::GenerateDepthJPEG(const std::string &dm_name) {
-    float max = std::numeric_limits<float>::min();
-    float min = std::numeric_limits<float>::max();
+void MainFrame::GenerateJPEGFromMVEI(const std::string &img_name) {
     for (const auto &view : m_pScene->get_views()) {
-        if (!view->has_image(dm_name)) {
+        if (!view->has_image(img_name)) {
             continue;
         }
-        mve::FloatImage::Ptr depth_img = view->get_float_image(dm_name);
-        max = std::max(max, *std::max_element(depth_img->begin(), depth_img->end()));
-        min = std::min(min, *std::min_element(depth_img->begin(), depth_img->end()));
-        mve::image::save_file(mve::image::float_to_byte_image(depth_img, min, max),
-                              util::fs::join_path(view->get_directory(), "img-" + dm_name + ".jpg"));
+        mve::FloatImage::Ptr img = view->get_float_image(img_name);
+        float max = *std::max_element(img->begin(), img->end());
+        float min = *std::min_element(img->begin(), img->end());
+        mve::image::save_file(mve::image::float_to_byte_image(img, min, max),
+                              util::fs::join_path(view->get_directory(), "img-" + img_name + ".jpg"));
     }
 }
