@@ -37,7 +37,8 @@ add_executable(multi_view src/MainApp.cpp include/MainApp.hpp
                           src/Camera.cpp include/Camera.hpp
                           src/Frustum.cpp include/Frustum.hpp
                           src/Cluster.cpp include/Cluster.hpp
-                          src/feature/Harris.cpp include/feature/Harris.hpp include/Util.hpp src/Util.cpp)
+                          src/feature/Harris.cpp include/feature/Harris.hpp
+                          include/Util.hpp src/Util.cpp src/Mesh.cpp include/Mesh.hpp)
 
 add_dependencies(multi_view ext_mve)
 add_dependencies(multi_view ext_smvs)
@@ -51,10 +52,11 @@ target_link_directories(multi_view PUBLIC
                         elibs/mve/libs/util
                         elibs/mve/libs/sfm
                         elibs/mve/libs/dmrecon
+                        elibs/mve/libs/fssr
                         elibs/smvs/lib)
 target_link_libraries(multi_view ${wxWidgets_LIBRARIES} fmt::fmt
                       OpenGL::GL glbinding::glbinding glm
-                      mve_dmrecon mve_sfm mve mve_util
+                      mve_dmrecon mve_fssr mve_sfm mve mve_util
                       smvs
                       ${JPEG_LIBRARIES} ${PNG_LIBRARIES} ${TIFF_LIBRARIES})
 

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 #include <glbinding/glbinding.h>
+#include "Mesh.hpp"
 
 class GLPanel : public wxGLCanvas {
 public:
@@ -22,8 +23,11 @@ public:
 
     void AddCameraFrustum(const glm::mat4 &transform);
 
-    Cluster::Ptr AddCluster(const std::vector<Vertex> &vertices, const glm::mat4 &transform = glm::mat4(1.0f));
+    Cluster::Ptr AddCluster(const std::vector<Vertex> &vertices,
+                            const glm::mat4 &transform = glm::mat4(1.0f));
 
+    Mesh::Ptr AddMesh(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices,
+                            const glm::mat4 &transform = glm::mat4(1.0f));
     template<typename T>
     void ClearObjects();
 

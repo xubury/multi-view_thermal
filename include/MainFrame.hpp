@@ -31,7 +31,6 @@ public:
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
         MENU_DEPTH_RECON,
-        MENU_DEPTH_RECON_OLD,
 
         MENU_DEPTH_TO_PSET,
         MENU_DEPTH_TO_PSET_THERMAL,
@@ -53,6 +52,8 @@ private:
 
     void OnMenuGenerateDepthImage(wxCommandEvent &event);
 
+    void OnMenuFSSR(wxCommandEvent &event);
+
     /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
     void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
 
@@ -67,7 +68,7 @@ private:
     int m_scale;
 
     /** The pointer to OpenGL render target */
-    Cluster::Ptr m_pCluster;
+    RenderTarget::Ptr m_pCluster;
 
     /** The pointer to mvs construct result*/
     mve::TriangleMesh::Ptr m_point_set;

@@ -102,3 +102,12 @@ void GLPanel::OpenGLDebugMessage(gl::GLenum, gl::GLenum, gl::GLuint, gl::GLenum 
     default: break;
     }
 }
+
+Mesh::Ptr GLPanel::AddMesh(const std::vector<Vertex> &vertices,
+                           const std::vector<unsigned int> &indices,
+                           const glm::mat4 &transform) {
+    Mesh::Ptr mesh = RenderTarget::Create<Mesh>(transform);
+    mesh->SetMesh(vertices, indices);
+    m_targets.emplace_back(mesh);
+    return mesh;
+}

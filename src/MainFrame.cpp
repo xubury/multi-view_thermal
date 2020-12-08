@@ -18,6 +18,11 @@
 #include "mve/mesh_info.h"
 #include "mve/mesh_io.h"
 #include "mve/mesh_io_ply.h"
+#include "mve/mesh_tools.h"
+#include "fssr/sample_io.h"
+#include "fssr/iso_octree.h"
+#include "fssr/iso_surface.h"
+#include "fssr/mesh_clean.h"
 #include "Image.hpp"
 #include "Util.hpp"
 
@@ -66,6 +71,8 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthToPointSet, this, MENU::MENU_DEPTH_TO_PSET);
     pOperateMenu->Append(MENU::MENU_DEPTH_TO_PSET_THERMAL, _("Depth Map to Point Set (Thermal)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthToPointSet, this, MENU::MENU_DEPTH_TO_PSET_THERMAL);
+    pOperateMenu->Append(MENU::MENU_FSS_RECON, _("Mesh reconstruction"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuFSSR, this, MENU::MENU_FSS_RECON);
 
     pOperateMenu->Append(MENU::MENU_GENERATE_DEPTH_IMG, _("Depth Image Generation"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuGenerateDepthImage, this, MENU::MENU_GENERATE_DEPTH_IMG);
@@ -790,4 +797,163 @@ void MainFrame::GenerateJPEGFromMVEI(const std::string &img_name) {
         mve::image::save_file(mve::image::float_to_byte_image(img, min, max),
                               util::fs::join_path(view->get_directory(), "img-" + img_name + ".jpg"));
     }
+}
+void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
+    std::string mesh_name = util::fs::join_path(m_pScene->get_path(), "surface.ply");
+    mve::TriangleMesh::Ptr mesh;
+    if (!util::fs::file_exists(mesh_name.c_str())) {
+        if (m_point_set == nullptr) {
+            std::cout << "No point set loaded" << std::endl;
+            event.Skip();
+            return;
+        }
+        fssr::IsoOctree octree;
+        mve::TriangleMesh::VertexList const& verts = m_point_set->get_vertices();
+        mve::TriangleMesh::NormalList const& vnormals = m_point_set->get_vertex_normals();
+        if (!m_point_set->has_vertex_normals())
+            throw std::invalid_argument("Vertex normals missing!");
+
+        mve::TriangleMesh::ValueList const& vvalues = m_point_set->get_vertex_values();
+        if (!m_point_set->has_vertex_values())
+            throw std::invalid_argument("Vertex scale missing!");
+
+        mve::TriangleMesh::ConfidenceList& vconfs = m_point_set->get_vertex_confidences();
+        if (!m_point_set->has_vertex_confidences())
+        {
+            std::cout << "INFO: No confidences given, setting to 1." << std::endl;
+            vconfs.resize(verts.size(), 1.0f);
+        }
+        mve::TriangleMesh::ColorList& vcolors = m_point_set->get_vertex_colors();
+        if (!m_point_set->has_vertex_colors())
+            vcolors.resize(verts.size(), math::Vec4f(-1.0f));
+
+        /* Add samples to the list. */
+        for (std::size_t i = 0; i < verts.size(); i += 1)
+        {
+            fssr::Sample sample;
+            sample.pos = verts[i];
+            sample.normal = vnormals[i];
+            sample.scale = vvalues[i];
+            sample.confidence = vconfs[i];
+            sample.color = math::Vec3f(*vcolors[i]);
+
+            octree.insert_sample(sample);
+        }
+
+        /* Exit if no samples have been inserted. */
+        if (octree.get_num_samples() == 0)
+        {
+            std::cerr << "Octree does not contain any samples, exiting."
+                      << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        /* Compute voxels. */
+        octree.limit_octree_level();
+        octree.print_stats(std::cout);
+        octree.compute_voxels();
+        octree.clear_samples();
+
+        /* Extract isosurface. */
+        {
+            std::cout << "Extracting isosurface..." << std::endl;
+            util::WallTimer timer;
+            fssr::IsoSurface iso_surface(&octree, fssr::INTERPOLATION_CUBIC);
+            mesh = iso_surface.extract_mesh();
+            std::cout << "  Done. Surface extraction took "
+                      << timer.get_elapsed() << "ms." << std::endl;
+        }
+        octree.clear();
+
+        /* Check if anything has been extracted. */
+        if (mesh->get_vertices().empty())
+        {
+            std::cerr << "Isosurface does not contain any vertices, exiting."
+                      << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+
+        /* Surfaces between voxels with zero confidence are ghosts. */
+        {
+            std::cout << "Deleting zero confidence vertices..." << std::flush;
+            util::WallTimer timer;
+            std::size_t num_vertices = mesh->get_vertices().size();
+            mve::TriangleMesh::DeleteList delete_verts(num_vertices, false);
+            for (std::size_t i = 0; i < num_vertices; ++i)
+                if (mesh->get_vertex_confidences()[i] == 0.0f)
+                    delete_verts[i] = true;
+            mesh->delete_vertices_fix_faces(delete_verts);
+            std::cout << " took " << timer.get_elapsed() << "ms." << std::endl;
+        }
+
+        /* Check for color and delete if not existing. */
+        mve::TriangleMesh::ColorList& colors = mesh->get_vertex_colors();
+        if (!colors.empty() && colors[0].minimum() < 0.0f)
+        {
+            std::cout << "Removing dummy mesh coloring..." << std::endl;
+            colors.clear();
+        }
+
+        {
+            float threshold = 1.0f;
+            std::cout << "Removing low-confidence geometry (threshold "
+                      << threshold << ")..." << std::endl;
+            std::size_t num_verts = mesh->get_vertices().size();
+            mve::TriangleMesh::ConfidenceList const& confs = mesh->get_vertex_confidences();
+            std::vector<bool> delete_list(confs.size(), false);
+            for (std::size_t i = 0; i < confs.size(); ++i)
+            {
+                if (confs[i] > threshold)
+                    continue;
+                delete_list[i] = true;
+            }
+            mesh->delete_vertices_fix_faces(delete_list);
+            std::size_t new_num_verts = mesh->get_vertices().size();
+            std::cout << "  Deleted " << (num_verts - new_num_verts)
+                      << " low-confidence vertices." << std::endl;
+        }
+
+        {
+            int component_size = 1000;
+            std::cout << "Removing isolated components below "
+                      << component_size << " vertices..." << std::endl;
+            std::size_t num_verts = mesh->get_vertices().size();
+            mve::geom::mesh_components(mesh, component_size);
+            std::size_t new_num_verts = mesh->get_vertices().size();
+            std::cout << "  Deleted " << (num_verts - new_num_verts)
+                      << " vertices in isolated regions." << std::endl;
+        }
+
+        {
+            std::cout << "Removing degenerated faces..." << std::endl;
+            std::size_t num_collapsed = fssr::clean_mc_mesh(mesh);
+            std::cout << "  Collapsed " << num_collapsed << " edges." << std::endl;
+        }
+        /* Write output mesh. */
+        mve::geom::SavePLYOptions ply_opts;
+        ply_opts.write_vertex_colors = true;
+        ply_opts.write_vertex_confidences = true;
+        ply_opts.write_vertex_values = true;
+        std::cout << "Mesh output file: " << "surface.ply" << std::endl;
+        mve::geom::save_ply_mesh(mesh, mesh_name, ply_opts);
+    } else {
+        mesh = mve::geom::load_ply_mesh(mesh_name);
+    }
+
+    mve::TriangleMesh::VertexList &v_pos(mesh->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(mesh->get_vertex_colors());
+    std::vector<Vertex> vertices(v_pos.size());
+    glm::mat4 transform(1.0f);
+    // inherit cluster's transform
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
+    }
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    }
+    m_pCluster = m_pGLPanel->AddMesh(vertices, mesh->get_faces(), transform);
+    Refresh();
+    event.Skip();
 }

@@ -5,7 +5,8 @@ externalproject_add(ext_mve
     SOURCE_DIR      ${CMAKE_SOURCE_DIR}/elibs/mve
     CONFIGURE_COMMAND ""
     BUILD_COMMAND   ${CMAKE_MAKE_PROGRAM} -C libs/mve && ${CMAKE_MAKE_PROGRAM} -C libs/util
-        && ${CMAKE_MAKE_PROGRAM} -C libs/sfm && ${CMAKE_MAKE_PROGRAM} -C libs/dmrecon #not platform independent
+        && ${CMAKE_MAKE_PROGRAM} -C libs/sfm && ${CMAKE_MAKE_PROGRAM} -C libs/dmrecon
+        && ${CMAKE_MAKE_PROGRAM} -C libs/fssr #not platform independent
     BUILD_IN_SOURCE 1
     INSTALL_COMMAND "" )
 
