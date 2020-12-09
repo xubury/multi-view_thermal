@@ -2,6 +2,7 @@
 #include "GLPanel.hpp"
 #include <algorithm>
 #include <atomic>
+#include <dmrecon/dmrecon.h>
 #include "util/system.h"
 #include "util/timer.h"
 #include "util/file_system.h"
@@ -13,7 +14,6 @@
 #include "sfm/bundler_incremental.h"
 #include "mve/image_tools.h"
 #include "mve/bundle_io.h"
-#include "dmrecon/settings.h"
 #include "math/octree_tools.h"
 #include "mve/mesh_info.h"
 #include "mve/mesh_io.h"
@@ -65,8 +65,10 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
-    pOperateMenu->Append(MENU::MENU_DEPTH_RECON, _("Depth Map Generation(SMVS)"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconSMVS, this, MENU::MENU_DEPTH_RECON);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS, _("Depth Map Generation"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconMVS, this, MENU::MENU_DEPTH_RECON_MVS);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING, _("Depth Map Generation(SMVS)"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconShading, this, MENU::MENU_DEPTH_RECON_SHADING);
     pOperateMenu->Append(MENU::MENU_DEPTH_TO_PSET, _("Depth Map to Point Set"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthToPointSet, this, MENU::MENU_DEPTH_TO_PSET);
     pOperateMenu->Append(MENU::MENU_DEPTH_TO_PSET_THERMAL, _("Depth Map to Point Set (Thermal)"));
@@ -284,6 +286,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
         event.Skip();
         return;
     }
+    util::WallTimer total_timer;
     // prebundle.sfm is for holding view and view matching info
     const std::string prebundle_path = util::fs::join_path(m_pScene->get_path(), "prebundle.sfm");
     sfm::bundler::ViewportList viewPorts;
@@ -333,7 +336,6 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     }
 
     /** Incremental SfM*/
-    util::WallTimer timer;
     util::system::rand_seed(RAND_SEED_SFM);
 
     sfm::bundler::TrackList tracks;
@@ -456,7 +458,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
         }
     }
 
-    std::cout << "SfM reconstruction took " << timer.get_elapsed()
+    std::cout << "SfM reconstruction took " << total_timer.get_elapsed()
               << " ms." << std::endl;
 
     std::cout << "Creating bundle data structure..." << std::endl;
@@ -519,7 +521,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     }
 }
 
-void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
+void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     if (m_pScene == nullptr || m_pScene->get_views().empty()) {
         event.Skip();
         return;
@@ -577,7 +579,7 @@ void MainFrame::OnMenuDepthReconSMVS(wxCommandEvent &event) {
     ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
     /* View selection */
     smvs::ViewSelection::Options view_select_opts;
-    view_select_opts.num_neighbors = 6;
+    view_select_opts.num_neighbors = 8;
     view_select_opts.embedding = UNDISTORTED_IMAGE_NAME;
     smvs::ViewSelection view_selection(view_select_opts, views, m_pScene->get_bundle());
     std::vector<mve::Scene::ViewList> view_neighbors(reconstruction_list.size());
@@ -762,16 +764,21 @@ void MainFrame::OnMenuDepthToPointSet(wxCommandEvent &event) {
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
     mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
-    std::vector<Vertex> vertices(v_pos.size());
+    std::vector<Vertex> vertices;
     glm::mat4 transform(1.0f);
     // inherit cluster's transform
     if (m_pCluster != nullptr) {
         transform = m_pCluster->GetTransform();
         m_pGLPanel->ClearObject(m_pCluster);
     }
-    for (std::size_t i = 0; i < vertices.size(); ++i) {
-        vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
-        vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    for (std::size_t i = 0; i < v_pos.size(); ++i) {
+        // not sampling black area
+        if (v_color[i][0] < 1e-4 && v_color[i][1] < 1e-4 && v_color[i][2] < 1e-4) {
+            continue;
+        }
+        vertices.emplace_back();
+        vertices.back().Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices.back().Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
     m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
@@ -802,6 +809,7 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
     std::string mesh_name = util::fs::join_path(m_pScene->get_path(), "surface.ply");
     mve::TriangleMesh::Ptr mesh;
     if (!util::fs::file_exists(mesh_name.c_str())) {
+        util::WallTimer total_timer;
         if (m_point_set == nullptr) {
             std::cout << "No point set loaded" << std::endl;
             event.Skip();
@@ -831,6 +839,10 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
         for (std::size_t i = 0; i < verts.size(); i += 1)
         {
             fssr::Sample sample;
+            // not sampling black area
+            if (vcolors[i][0] < 1e-4 && vcolors[i][1] < 1e-4 && vcolors[i][2] < 1e-4) {
+                continue;
+            }
             sample.pos = verts[i];
             sample.normal = vnormals[i];
             sample.scale = vvalues[i];
@@ -936,6 +948,7 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
         ply_opts.write_vertex_values = true;
         std::cout << "Mesh output file: " << "surface.ply" << std::endl;
         mve::geom::save_ply_mesh(mesh, mesh_name, ply_opts);
+        std::cout << "Mesh reconstruction took " << total_timer.get_elapsed_sec() << "seconds."<< std::endl;
     } else {
         mesh = mve::geom::load_ply_mesh(mesh_name);
     }
@@ -955,5 +968,76 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
     }
     m_pCluster = m_pGLPanel->AddMesh(vertices, mesh->get_faces(), transform);
     Refresh();
+    event.Skip();
+}
+
+void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
+    if (m_pScene == nullptr) {
+        event.Skip();
+        return;
+    }
+    util::WallTimer timer;
+    mvs::Settings settings;
+    mve::Scene::ViewList &views(m_pScene->get_views());
+    if (views.empty()) {
+        event.Skip();
+        return;
+    } else {
+#pragma omp parallel for schedule(dynamic, 1)
+        for (std::size_t id = 0; id < views.size(); ++id) {
+            if (views[id] == nullptr || !views[id]->is_camera_valid())
+                continue;
+
+            /* Setup MVS. */
+            settings.refViewNr = id;
+
+            std::string embedding_name = "depth-L"
+                + util::string::get(m_scale);
+            if (views[id]->has_image(embedding_name))
+                continue;
+
+            try {
+                mvs::DMRecon recon(m_pScene, settings);
+                recon.start();
+            }
+            catch (std::exception &err) {
+                std::cerr << err.what() << std::endl;
+            }
+        }
+    }
+    std::cout << "Reconstruction took "
+              << timer.get_elapsed() << "ms." << std::endl;
+    std::cout << "Saving views back to disc..." << std::endl;
+    m_pScene->save_views();
+    std::string dm_name = "depth-L"
+        + util::string::get(settings.scale);
+    std::string input_name;
+    if (m_scale != 0)
+        input_name = "undist-L" + std::to_string(m_scale);
+    else
+        input_name = "undistorted";
+    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, m_scale, "point-set", false);
+
+    // display cluster
+    mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
+    std::vector<Vertex> vertices(v_pos.size());
+    glm::mat4 transform(1.0f);
+    if (!m_pGLPanel->GetTargetList().empty()) {
+        for (const auto &obj : m_pGLPanel->GetTargetList()) {
+            if (obj->As<Cluster>() != nullptr) {
+                transform = obj->GetTransform();
+                break;
+            }
+        }
+    }
+    m_pGLPanel->ClearObjects<Cluster>();
+    for (std::size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    }
+    m_pGLPanel->AddCluster(vertices, transform);
+    Refresh();
+
     event.Skip();
 }

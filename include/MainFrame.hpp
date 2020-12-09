@@ -30,7 +30,8 @@ public:
         MENU_SCENE_NEW,
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
-        MENU_DEPTH_RECON,
+        MENU_DEPTH_RECON_SHADING,
+        MENU_DEPTH_RECON_MVS,
 
         MENU_DEPTH_TO_PSET,
         MENU_DEPTH_TO_PSET_THERMAL,
@@ -46,7 +47,9 @@ private:
 
     void OnMenuStructureFromMotion(wxCommandEvent &event);
 
-    void OnMenuDepthReconSMVS(wxCommandEvent &event);
+    void OnMenuDepthReconShading(wxCommandEvent &event);
+
+    void OnMenuDepthReconMVS(wxCommandEvent &event);
 
     void OnMenuDepthToPointSet(wxCommandEvent &event);
 

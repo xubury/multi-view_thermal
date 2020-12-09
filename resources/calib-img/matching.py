@@ -69,5 +69,5 @@ class Matching():
         y_map = visual_pos_in_thermal[1].reshape(height, width).astype(np.float32)
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
-        merged = cv2.addWeighted(visual, 0.4, thermal_mapped, 0.8, 0.2)
+        merged = cv2.addWeighted(visual, 0, thermal_mapped, 1.0, 0)
         cv2.imwrite(output_name, merged)

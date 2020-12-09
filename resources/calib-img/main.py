@@ -3,6 +3,7 @@ import matching
 import os
 import shutil
 import re
+import time
 
 test = img_glob.search_files_by_name("thermal-img", "*.jpg")
 for name in test:
@@ -25,6 +26,8 @@ for idx, name in enumerate(thermal_images_list):
             break
 
 
+# measure wall time
+t0 = time.time()
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
 matcher = matching.Matching(2**sclae_factor, 50, 25)
 
@@ -39,4 +42,4 @@ for mve_view_dir in mve_entris:
             matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
             break
 
-
+print("Matching took: ", time.time() - t0, "seconds.")
