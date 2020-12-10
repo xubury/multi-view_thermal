@@ -792,10 +792,11 @@ void MainFrame::OnMenuThermalReconstruction(wxCommandEvent &event) {
 }
 
 void MainFrame::OnMenuGenerateDepthImage(wxCommandEvent &event) {
-    std::string dm_name = "smvs-B" + std::to_string(m_scale) ;
+    std::string dm_name = "smvs-B" + std::to_string(m_scale);
     std::string sgm_name = "smvs-sgm";
     GenerateJPEGFromMVEI(dm_name);
     GenerateJPEGFromMVEI(sgm_name);
+    GenerateJPEGFromMVEI("depth-L"+ std::to_string(m_scale));
     event.Skip();
 }
 
