@@ -65,6 +65,8 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
+    pOperateMenu->Append(MENU::MENU_DISPLAY_FRUSTUM, _("Display Frustum"), wxEmptyString, true);
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDisplayFrustum, this, MENU::MENU_DISPLAY_FRUSTUM);
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS, _("Dense reconstruction(MVS)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconMVS, this, MENU::MENU_DEPTH_RECON_MVS);
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING, _("Dense reconstruction(SMVS)"));
@@ -121,17 +123,6 @@ void MainFrame::OnMenuOpenScene(wxCommandEvent &event) {
                 vertices[i].Color = glm::vec3(features[i].color[0], features[i].color[1], features[i].color[2]);
             }
             m_pCluster = m_pGLPanel->AddCluster(vertices);
-
-            m_pGLPanel->ClearObjects<Frustum>();
-            for (const auto &view : m_pScene->get_views()) {
-                if (!view->is_camera_valid())
-                    continue;
-
-                glm::mat4 trans;
-                view->get_camera().fill_cam_to_world(&trans[0].x);
-                trans = Util::MveToGLMatrix(trans);
-                m_pGLPanel->AddCameraFrustum(trans);
-            }
         } catch (const std::exception &e) {
             std::cout << "Error opening bundle file: " << e.what() << std::endl;
         }
@@ -508,16 +499,6 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
         std::cout << "Saving view " << view->get_directory() << std::endl;
         view->save_view();
         view->cache_cleanup();
-    }
-    m_pGLPanel->ClearObjects<Frustum>();
-    for (const auto &view : views) {
-        if (!view->is_camera_valid())
-            continue;
-
-        glm::mat4 trans;
-        view->get_camera().fill_cam_to_world(&trans[0].x);
-        trans = Util::MveToGLMatrix(trans);
-        m_pGLPanel->AddCameraFrustum(trans);
     }
 }
 
@@ -1067,5 +1048,22 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
     m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
 
+    event.Skip();
+}
+
+void MainFrame::OnMenuDisplayFrustum(wxCommandEvent &event) {
+    m_pGLPanel->ClearObjects<Frustum>();
+    if (event.IsChecked()) {
+        for (const auto &view : m_pScene->get_views()) {
+            if (!view->is_camera_valid())
+                continue;
+
+            glm::mat4 trans;
+            view->get_camera().fill_cam_to_world(&trans[0].x);
+            trans = Util::MveToGLMatrix(trans);
+            m_pGLPanel->AddCameraFrustum(trans);
+        }
+    }
+    Refresh();
     event.Skip();
 }

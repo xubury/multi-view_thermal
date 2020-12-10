@@ -30,6 +30,7 @@ public:
         MENU_SCENE_NEW,
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
+        MENU_DISPLAY_FRUSTUM,
         MENU_DEPTH_RECON_MVS,
         MENU_DEPTH_RECON_SHADING,
         MENU_DEPTH_RECON_MVS_THERMAL,
@@ -43,6 +44,8 @@ private:
     void OnMenuNewScene(wxCommandEvent &event);
 
     void OnMenuStructureFromMotion(wxCommandEvent &event);
+
+    void OnMenuDisplayFrustum(wxCommandEvent &event);
 
     void OnMenuDepthReconShading(wxCommandEvent &event);
 
