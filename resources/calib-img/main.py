@@ -19,7 +19,7 @@ thermal_images_list = img_glob.search_files_by_time(thermal_dir, "*.jpg")
 
 for idx, name in enumerate(thermal_images_list):
     for filename in os.listdir(mve_entris[idx]):
-        if re.search("smvs-B[0-9].mvei", filename):
+        if re.search("undist-L" + str(scale_factor) + ".png", filename):
             dst_file_name = os.path.join(mve_entris[idx], "thermal.jpg")
             shutil.copyfile(name, dst_file_name)
             print("Copying " + name + " to " + dst_file_name)
