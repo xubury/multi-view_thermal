@@ -102,7 +102,6 @@ void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out,
 mve::TriangleMesh::Ptr GenerateMeshSMVS(mve::Scene::Ptr scene,
                                         const std::string &input_name,
                                         const std::string &dm_name,
-                                        int scale,
                                         const std::string &output_name,
                                         bool triangle_mesh) {
     mve::TriangleMesh::Ptr mesh;
@@ -112,7 +111,7 @@ mve::TriangleMesh::Ptr GenerateMeshSMVS(mve::Scene::Ptr scene,
         std::cout << ".ply file already exists, skipping mesh generation." << std::endl;
         ply_path = util::fs::join_path(scene->get_path(), output_name);
     } else {
-        ply_path = util::fs::join_path(scene->get_path(), output_name + "-L" + std::to_string(scale) + ".ply");
+        ply_path = util::fs::join_path(scene->get_path(), output_name + ".ply");
     }
     if (util::fs::file_exists(ply_path.c_str())) { // skip point set reconstruction if ply is found
         std::cout << "The .ply file already exists, skipping mesh generation." << std::endl;
@@ -161,7 +160,7 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
     if (util::string::right(output_name, 4) == ".ply") {
         ply_path = util::fs::join_path(scene->get_path(), output_name);
     } else {
-        ply_path = util::fs::join_path(scene->get_path(), output_name + "-L" + std::to_string(scale) + ".ply");
+        ply_path = util::fs::join_path(scene->get_path(), output_name + ".ply");
     }
     mve::TriangleMesh::Ptr point_set;
     if (util::fs::file_exists(ply_path.c_str())) { // skip point set reconstruction if ply is found

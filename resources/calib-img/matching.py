@@ -15,14 +15,14 @@ class Matching():
 
     def __init__(self, scale_factor, h_step, v_step):
         self.calibrator = calibration.ThermalVisualCalibrator("thermal-img", "normal-img", (3, 9), h_step, v_step)
-        
+
         self.calibrator.StartCalibration()
         calibration.undistort_image("normal-img", self.calibrator.visual_images_list, self.calibrator.visual_K, self.calibrator.visual_dist)
         calibration.undistort_image("thermal-img", self.calibrator.thermal_images_list, self.calibrator.thermal_K, self.calibrator.thermal_dist)
 
 
         #  Note: In the 3d reconstruction, images are usually scaled
-        #  Therefore, K matrix needs to be scaled too if scaled images are used 
+        #  Therefore, K matrix needs to be scaled too if scaled images are used
         print("thermal K (homogeneous):")
         print(self.calibrator.thermal_K_homo)
         print("visual K (homogeneous):")
@@ -54,7 +54,6 @@ class Matching():
         depth_img = np.array(depth_img)
         depth_img = depth_img.reshape(dp_height, dp_width)
         depth_img *= depth_scale
-        depth_img[depth_img == 0] = 1
 
         visual_image_pos = np.zeros((4, width * height), np.float32)
         visual_image_pos[0,:] = np.tile(np.arange(width),height)

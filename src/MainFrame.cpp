@@ -65,14 +65,14 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     auto *pOperateMenu = new wxMenu();
     pOperateMenu->Append(MENU::MENU_DO_SFM, _("Structure from Motion"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuStructureFromMotion, this, MENU::MENU_DO_SFM);
-    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS, _("Depth Map Generation"));
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS, _("Dense reconstruction(MVS)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconMVS, this, MENU::MENU_DEPTH_RECON_MVS);
-    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING, _("Depth Map Generation(SMVS)"));
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING, _("Dense reconstruction(SMVS)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconShading, this, MENU::MENU_DEPTH_RECON_SHADING);
-    pOperateMenu->Append(MENU::MENU_DEPTH_TO_PSET, _("Depth Map to Point Set"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthToPointSet, this, MENU::MENU_DEPTH_TO_PSET);
-    pOperateMenu->Append(MENU::MENU_DEPTH_TO_PSET_THERMAL, _("Depth Map to Point Set (Thermal)"));
-    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthToPointSet, this, MENU::MENU_DEPTH_TO_PSET_THERMAL);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS_THERMAL, _("Thermal From MVS"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuThermalReconstruction, this, MENU::MENU_DEPTH_RECON_MVS_THERMAL);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING_THERMAL, _("Thermal from SMVS"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuThermalReconstruction, this, MENU::MENU_DEPTH_RECON_SHADING_THERMAL);
     pOperateMenu->Append(MENU::MENU_FSS_RECON, _("Mesh reconstruction"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuFSSR, this, MENU::MENU_FSS_RECON);
 
@@ -526,6 +526,13 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
         event.Skip();
         return;
     }
+    std::string input_name;
+    if (m_scale != 0)
+        input_name = "undist-L" + util::string::get(m_scale);
+    else
+        input_name = UNDISTORTED_IMAGE_NAME;
+
+    std::string dm_name = "smvs-B" + util::string::get(m_scale);
     util::WallTimer total_timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
     /* Update legacy data */
@@ -547,13 +554,6 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
             }
         view->reload_view();
     }
-    std::string input_name;
-    if (m_scale != 0)
-        input_name = "undist-L" + util::string::get(m_scale);
-    else
-        input_name = UNDISTORTED_IMAGE_NAME;
-
-    std::string dm_name = "smvs-B" + util::string::get(m_scale);
 
     /* Add views to reconstruction list */
     std::vector<int> reconstruction_list;
@@ -740,26 +740,51 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     std::cout << "Saving views back to disc..." << std::endl;
     m_pScene->save_views();
 
+    std::string output_name = "smvs-point-set";
+    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, output_name, false);
+    // display cluster
+    mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
+    std::vector<Vertex> vertices;
+    glm::mat4 transform(1.0f);
+    // inherit cluster's transform
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
+    }
+    for (std::size_t i = 0; i < v_pos.size(); ++i) {
+        // not sampling black area
+        if (v_color[i][0] < 1e-4 && v_color[i][1] < 1e-4 && v_color[i][2] < 1e-4) {
+            continue;
+        }
+        vertices.emplace_back();
+        vertices.back().Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices.back().Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    }
+    m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
+    Refresh();
     event.Skip();
 }
 
-void MainFrame::OnMenuDepthToPointSet(wxCommandEvent &event) {
+void MainFrame::OnMenuThermalReconstruction(wxCommandEvent &event) {
     if (m_pScene == nullptr || m_pScene->get_views().empty()) {
         event.Skip();
         return;
     }
     std::string input_name;
-    std::string output_name = "smvs-point-set";
-    if (event.GetId() == MENU::MENU_DEPTH_TO_PSET_THERMAL) {
-        input_name = "merged";
-        output_name = "smvs-point-set-thermal";
-    } else if (m_scale != 0)
-        input_name = "undist-L" + util::string::get(m_scale);
-    else
-        input_name = UNDISTORTED_IMAGE_NAME;
-
-    std::string dm_name = "smvs-B" + util::string::get(m_scale);
-    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, m_scale, output_name, false);
+    std::string output_name;
+    std::string dm_name;
+    if (event.GetId() == MENU::MENU_DEPTH_RECON_MVS_THERMAL) {
+        input_name = "merged-mvs";
+        output_name = "thermal-mvs";
+        dm_name = "depth-L" + util::string::get(m_scale);
+        m_point_set = Util::GenerateMesh(m_pScene, input_name, dm_name, m_scale, output_name);
+    } else if (event.GetId() == MENU::MENU_DEPTH_RECON_SHADING_THERMAL) {
+        input_name = "merged-smvs";
+        output_name = "thermal-shading";
+        dm_name = "smvs-B" + util::string::get(m_scale);
+        m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, output_name, false);
+    }
 
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -977,8 +1002,9 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
         return;
     }
     util::WallTimer timer;
-    mvs::Settings settings;
     mve::Scene::ViewList &views(m_pScene->get_views());
+    std::string dm_name = "depth-L"
+        + util::string::get(m_scale);
     if (views.empty()) {
         event.Skip();
         return;
@@ -989,11 +1015,11 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
                 continue;
 
             /* Setup MVS. */
+            mvs::Settings settings;
+            settings.scale = m_scale;
             settings.refViewNr = id;
 
-            std::string embedding_name = "depth-L"
-                + util::string::get(m_scale);
-            if (views[id]->has_image(embedding_name))
+            if (views[id]->has_image(dm_name))
                 continue;
 
             try {
@@ -1009,14 +1035,13 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
               << timer.get_elapsed() << "ms." << std::endl;
     std::cout << "Saving views back to disc..." << std::endl;
     m_pScene->save_views();
-    std::string dm_name = "depth-L"
-        + util::string::get(settings.scale);
     std::string input_name;
     if (m_scale != 0)
         input_name = "undist-L" + std::to_string(m_scale);
     else
         input_name = "undistorted";
-    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, m_scale, "point-set", false);
+    std::string ply_path = "point-set.ply";
+    m_point_set = Util::GenerateMesh(m_pScene, input_name, dm_name, m_scale, ply_path);
 
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -1031,12 +1056,15 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
             }
         }
     }
-    m_pGLPanel->ClearObjects<Cluster>();
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
+    }
     for (std::size_t i = 0; i < vertices.size(); ++i) {
         vertices[i].Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
         vertices[i].Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
     }
-    m_pGLPanel->AddCluster(vertices, transform);
+    m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
 
     event.Skip();

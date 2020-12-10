@@ -11,7 +11,7 @@ for name in test:
 
 mve_dir = "E:/normal-img/scene/views"
 thermal_dir = "E:/recon_image/11-7/thermal/4"
-sclae_factor = 2
+scale_factor = 2
 
 mve_entris = img_glob.get_mve_views_entries(mve_dir)
 
@@ -29,15 +29,26 @@ for idx, name in enumerate(thermal_images_list):
 # measure wall time
 t0 = time.time()
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
-matcher = matching.Matching(2**sclae_factor, 50, 25)
+matcher = matching.Matching(2**scale_factor, 50, 25)
 
 for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
-        if re.search("smvs-B[0-9].mvei", filename):
+        if re.search("depth-L" + str(scale_factor) + ".mvei", filename):
             dm_name = os.path.join(mve_view_dir, filename)
-            visual_name = os.path.join(mve_view_dir, "undist-L2.png")
+            visual_name = os.path.join(mve_view_dir, "undist-L" + str(scale_factor) + ".png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
-            output_name = os.path.join(mve_view_dir, "merged.jpg")
+            output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
+            # 104 converts the depth value unit to mm(millimeter)
+            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
+            break
+
+for mve_view_dir in mve_entris:
+    for filename in os.listdir(mve_view_dir):
+        if re.search("smvs-B" + str(scale_factor) + ".mvei", filename):
+            dm_name = os.path.join(mve_view_dir, filename)
+            visual_name = os.path.join(mve_view_dir, "undist-L" + str(scale_factor) + ".png")
+            thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
+            output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
             break

@@ -30,14 +30,11 @@ public:
         MENU_SCENE_NEW,
         MENU_SCENE_OPEN,
         MENU_DO_SFM,
-        MENU_DEPTH_RECON_SHADING,
         MENU_DEPTH_RECON_MVS,
-
-        MENU_DEPTH_TO_PSET,
-        MENU_DEPTH_TO_PSET_THERMAL,
+        MENU_DEPTH_RECON_SHADING,
+        MENU_DEPTH_RECON_MVS_THERMAL,
+        MENU_DEPTH_RECON_SHADING_THERMAL,
         MENU_FSS_RECON,
-
-
         MENU_GENERATE_DEPTH_IMG
     };
 private:
@@ -51,7 +48,7 @@ private:
 
     void OnMenuDepthReconMVS(wxCommandEvent &event);
 
-    void OnMenuDepthToPointSet(wxCommandEvent &event);
+    void OnMenuThermalReconstruction(wxCommandEvent &event);
 
     void OnMenuGenerateDepthImage(wxCommandEvent &event);
 

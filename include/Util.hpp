@@ -22,7 +22,6 @@ void MeanFilter(const mve::FloatImage::ConstPtr &img, mve::FloatImage::Ptr &out,
 mve::TriangleMesh::Ptr GenerateMeshSMVS(mve::Scene::Ptr scene,
                                         const std::string &input_name,
                                         const std::string &dm_name,
-                                        int scale,
                                         const std::string &output_name,
                                         bool triangle_mesh);
 
