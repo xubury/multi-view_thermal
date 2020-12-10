@@ -587,7 +587,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
         int const i = reconstruction_list[v];
         selection_tasks.emplace_back(thread_pool.add_task(
-            [i, v, &views, &view_selection, &view_neighbors] {
+            [i, v, &view_selection, &view_neighbors] {
               view_neighbors[v] = view_selection.get_neighbors_for_view(i);
             }));
     }
