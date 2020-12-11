@@ -560,7 +560,8 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
     /* View selection */
     smvs::ViewSelection::Options view_select_opts;
-    view_select_opts.num_neighbors = 8;
+    uint32_t num_neighbors = views.size() / 6;
+    view_select_opts.num_neighbors = num_neighbors > 0 ? num_neighbors : 1;
     view_select_opts.embedding = UNDISTORTED_IMAGE_NAME;
     smvs::ViewSelection view_selection(view_select_opts, views, m_pScene->get_bundle());
     std::vector<mve::Scene::ViewList> view_neighbors(reconstruction_list.size());
@@ -1062,6 +1063,8 @@ void MainFrame::OnMenuDisplayFrustum(wxCommandEvent &event) {
             glm::mat4 trans;
             view->get_camera().fill_cam_to_world(&trans[0].x);
             trans = Util::MveToGLMatrix(trans);
+            if (m_pCluster != nullptr)
+                trans = m_pCluster->GetTransform() * trans;
             m_pGLPanel->AddCameraFrustum(trans);
         }
     }
