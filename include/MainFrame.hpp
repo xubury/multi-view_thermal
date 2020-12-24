@@ -1,26 +1,24 @@
 #ifndef _MAIN_FRAME_HPP
 #define _MAIN_FRAME_HPP
 
-#ifndef WX_PRECOMP
-
-#include <wx/wxprec.h>
-
-#endif
-
 #include <wx/listctrl.h>
+#include <wx/wx.h>
+
 #include <vector>
-#include "mve/view.h"
-#include "mve/scene.h"
+
 #include "Cluster.hpp"
+#include "mve/scene.h"
+#include "mve/view.h"
 
 class GLPanel;
 
 class MainFrame : public wxFrame {
-public:
+   public:
     /** ImageList, first is the list control display on window,
      * second is the list that holds icon data.*/
     typedef std::pair<wxListCtrl *, wxImageList *> ImageList;
-public:
+
+   public:
     explicit MainFrame(wxWindow *parent, wxWindowID id = wxID_ANY,
                        const wxString &title = wxEmptyString,
                        const wxPoint &pos = wxDefaultPosition,
@@ -38,7 +36,8 @@ public:
         MENU_FSS_RECON,
         MENU_GENERATE_DEPTH_IMG
     };
-private:
+
+   private:
     void OnMenuOpenScene(wxCommandEvent &event);
 
     void OnMenuNewScene(wxCommandEvent &event);
@@ -57,8 +56,10 @@ private:
 
     void OnMenuFSSR(wxCommandEvent &event);
 
-    /** Display images owned by m_pScene on 'image_list' which have the name of 'image_name' */
-    void DisplaySceneImage(const std::string &image_name, const ImageList &image_list);
+    /** Display images owned by m_pScene on 'image_list' which have the name of
+     * 'image_name' */
+    void DisplaySceneImage(const std::string &image_name,
+                           const ImageList &image_list);
 
     ImageList m_originalImageList;
 
@@ -78,4 +79,4 @@ private:
     void GenerateJPEGFromMVEI(const std::string &img_name);
 };
 
-#endif //_MAIN_FRAME_HPP
+#endif  //_MAIN_FRAME_HPP
