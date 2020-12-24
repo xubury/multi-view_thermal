@@ -4,6 +4,10 @@ project(multi-view_thermal VERSION 0.1.0)
 include(ExternalProject)
 
 find_package(fmt REQUIRED)
+
+if("$ENV{MSYSTEM}" STREQUAL "MINGW64")
+    set(MSYS true)
+endif()
 find_package(
     wxWidgets
     REQUIRED
