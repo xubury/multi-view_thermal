@@ -736,7 +736,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     }
     for (std::size_t i = 0; i < v_pos.size(); ++i) {
         // not sampling black area
-        if (v_color[i][0] < 1e-4 && v_color[i][1] < 1e-4 && v_color[i][2] < 1e-4) {
+        if (v_color[i][0] < 1e-1 && v_color[i][1] < 1e-1 && v_color[i][2] < 1e-1) {
             continue;
         }
         vertices.emplace_back();
@@ -780,7 +780,7 @@ void MainFrame::OnMenuThermalReconstruction(wxCommandEvent &event) {
     }
     for (std::size_t i = 0; i < v_pos.size(); ++i) {
         // not sampling black area
-        if (v_color[i][0] < 1e-4 && v_color[i][1] < 1e-4 && v_color[i][2] < 1e-4) {
+        if (v_color[i][0] < 1e-1 && v_color[i][1] < 1e-1 && v_color[i][2] < 1e-1) {
             continue;
         }
         vertices.emplace_back();
@@ -915,7 +915,7 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
         }
 
         {
-            float threshold = 1.0f;
+            float threshold = 5.0f;
             std::cout << "Removing low-confidence geometry (threshold "
                       << threshold << ")..." << std::endl;
             std::size_t num_verts = mesh->get_vertices().size();
