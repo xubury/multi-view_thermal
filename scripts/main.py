@@ -3,6 +3,7 @@ import matching
 import os
 import shutil
 import re
+import numpy as np
 import time
 
 mve_dir = "E:/recon-image/1-13/2/visual/scene/views"

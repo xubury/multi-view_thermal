@@ -8,7 +8,7 @@ def undistort_image(output_path, images, matrix, dist):
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     img = cv2.imread(images[0])
-    (height, width, c) = img.shape
+    (height, width, _) = img.shape
     (map1, map2) = cv2.initUndistortRectifyMap(matrix, dist, None, None, (width, height), cv2.CV_32FC1)
     for idx, fname in enumerate(images):
         img = cv2.imread(fname)
@@ -54,9 +54,9 @@ class ThermalVisualCalibrator():
     def get_points(self, path, size, black_dot, verbose = False):
         objp = np.zeros((size[0] * size[1], 3), np.float32)
         for r in range(0, size[1]):
-            y_index = size[1] - r;
+            y_index = size[1] - r
             for c in range(0, size[0]):
-                x_index = size[0] - c;
+                x_index = size[0] - c
                 if r % 2 == 0:
                     objp[c + r * size[0]] = [x_index * self.real_hstep + self.real_hstep / 2, y_index * self.real_vstep, 0]
                 else:
@@ -76,7 +76,7 @@ class ThermalVisualCalibrator():
         for idx, fname in enumerate(images):
             if verbose:
                 print("read in:", fname)
-            
+
             img = cv2.imread(fname)
             os.rename(fname, os.path.join(path, str(idx)+".jpg"))
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -84,8 +84,8 @@ class ThermalVisualCalibrator():
 
             #  findCirclesGrid only detect Dark Color, so revert color here.
             if not black_dot:
-                full_white = np.ones(gray.shape, dtype=np.uint8) * 255;
-                gray = np.array(full_white - gray);
+                full_white = np.ones(gray.shape, dtype=np.uint8) * 255
+                gray = np.array(full_white - gray)
 
             params = cv2.SimpleBlobDetector_Params()
             params.maxArea = 10e4
@@ -105,7 +105,7 @@ class ThermalVisualCalibrator():
                 write_name = 'corners_found'+str(idx)+'.jpg'
                 cv2.imwrite(os.path.join(output_path, write_name), img)
 
-            else: 
+            else:
                 print("no circle found.")
 
         imgpoints = np.squeeze(imgpoints)
@@ -115,7 +115,7 @@ class ThermalVisualCalibrator():
         print("Running thermal images calibration...")
         self.thermal_images_list, self.thermal_world_pos, self.thermal_img_pos, shape = self.get_points(self.thermal_path, self.calibration_pt_size, False)
 
-        ret, self.thermal_K, self.thermal_dist, thermal_rvecs, thermal_tvecs = cv2.calibrateCamera(self.thermal_world_pos, self.thermal_img_pos, shape, None, None)
+        _, self.thermal_K, self.thermal_dist, thermal_rvecs, thermal_tvecs = cv2.calibrateCamera(self.thermal_world_pos, self.thermal_img_pos, shape, None, None)
 
 
         self.thermal_K_homo = K_to_homogenous_matrix(self.thermal_K)
@@ -128,7 +128,7 @@ class ThermalVisualCalibrator():
         print("Running visual images calibration...")
         self.visual_images_list, self.visual_world_pos, self.visual_img_pos, shape = self.get_points(self.visual_path, self.calibration_pt_size, True)
 
-        ret, self.visual_K, self.visual_dist, visual_rvecs, visual_tvecs = cv2.calibrateCamera(self.visual_world_pos, self.visual_img_pos, shape, None, None)
+        _, self.visual_K, self.visual_dist, visual_rvecs, visual_tvecs = cv2.calibrateCamera(self.visual_world_pos, self.visual_img_pos, shape, None, None)
 
 
         self.visual_K_homo = K_to_homogenous_matrix(self.visual_K)
@@ -139,8 +139,8 @@ class ThermalVisualCalibrator():
 
 
 def K_to_homogenous_matrix(K):
-    K = np.vstack((K, [0, 0, 0]));
-    K = np.hstack((K, [[0], [0], [0], [1]]));
+    K = np.vstack((K, [0, 0, 0]))
+    K = np.hstack((K, [[0], [0], [0], [1]]))
     return np.matrix(K)
 
 def Rt_to_homogeneous_matrix(R, t, Rodrigues = True):
@@ -149,6 +149,5 @@ def Rt_to_homogeneous_matrix(R, t, Rodrigues = True):
     else:
         rvec = R
     transform = np.hstack((rvec, t))
-    transform = np.vstack((transform, [0, 0, 0, 1]));
+    transform = np.vstack((transform, [0, 0, 0, 1]))
     return np.matrix(transform)
-
