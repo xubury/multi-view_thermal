@@ -16,7 +16,7 @@ dm_name = os.path.join(base_dir, "smvs-B2.mvei")
 output_name = "merged-test.jpg"
 
 pos = matcher.match_thermal_to_visual(
-    visual_name, thermal_name, dm_name, output_name, 95)
+    visual_name, thermal_name, dm_name, output_name, 90)
 
 thermal = cv2.imread(thermal_name)
 visual = cv2.imread(visual_name)
@@ -65,22 +65,20 @@ for scale in np.linspace(0.2, 1.5, 100)[::-1]:
 (endX, endY) = (
     int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
 
-startY -= 25
-endY -= 25
 crop_img = visual[startY:endY, startX:endX]
-crop_img = cv2.resize(
-    crop_img, (template.shape[1], template.shape[0]))
 cv2.imwrite("crop.jpg", crop_img)
 cv2.imwrite("thermal.jpg", thermal)
 
+crop_img = cv2.resize(
+    crop_img, (thermal.shape[1], thermal.shape[0]))
 final = np.concatenate((crop_img, thermal), axis=1)
+cv2.imwrite("align.jpg", final)
 
 # draw a bounding box around the detected result and display the image
 cv2.rectangle(visual, (startX, startY),
               (endX, endY), (0, 0, 255), 2)
 
 cv2.imwrite("detected.jpg", visual)
-cv2.imwrite("align.jpg", final)
 
 minX = template.shape[1]
 minY = template.shape[0]
@@ -105,7 +103,8 @@ for y in range(startY, endY):
             maxX = max(maxX, x)
             maxY = max(maxY, y)
             visual[y, x] = thermal[refY, refX]
-scale = ((maxX - minX) * (maxY - minY)) / ((endX - startX) * (endY - startY))
+scale = ((maxX - minX) / r * (maxY - minY) / r) / \
+    ((endX - startX) * (endY - startY))
 print(scale ** 0.5)
 cv2.rectangle(visual, (minX, minY),
               (maxX, maxY), (0, 255, 0), 2)
