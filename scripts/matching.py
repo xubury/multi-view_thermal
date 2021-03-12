@@ -3,13 +3,8 @@ import cv2
 import calibration
 import img_glob
 import os
-
-# calculate the transform from L to R
-
-
-def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
-    W = K_r * Rt_r * Rt_l.I * K_l.I
-    return np.matrix(W)
+import utils
+import imutils
 
 
 class Matching():
@@ -29,15 +24,14 @@ class Matching():
             print(self.W)
         else:
             self.calibrate()
-            print(self.W.shape)
             np.savetxt("calibration.txt", self.W)
 
     def calibrate(self):
-        self.calibrator.StartCalibration()
-        calibration.undistort_image("../res/normal-img", self.calibrator.visual_images_list,
-                                    self.calibrator.visual_K, self.calibrator.visual_dist)
-        calibration.undistort_image("../res/thermal-img", self.calibrator.thermal_images_list,
-                                    self.calibrator.thermal_K, self.calibrator.thermal_dist)
+        self.calibrator.startCalibration()
+        calibration.undistorImage("../res/normal-img", self.calibrator.visual_images_list,
+                                  self.calibrator.visual_K, self.calibrator.visual_dist)
+        calibration.undistorImage("../res/thermal-img", self.calibrator.thermal_images_list,
+                                  self.calibrator.thermal_K, self.calibrator.thermal_dist)
 
         #  Note: In the 3d reconstruction, images are usually scaled
         #  Therefore, K matrix needs to be scaled too if scaled images are used
@@ -53,12 +47,12 @@ class Matching():
         print(self.calibrator.thermal_Rt[0])
         print(self.calibrator.visual_Rt[0])
 
-        self.W = calculate_W_L_to_R(
+        self.W = utils.transformLeftToRight(
             K_homo, self.calibrator.visual_Rt[pose_id], self.calibrator.thermal_K_homo, self.calibrator.thermal_Rt[pose_id])
         print("W martix:")
         print(self.W)
 
-    def match_thermal_to_visual(self, visual_name, thermal_name, dm_name, output_name, depth_scale):
+    def mapThermalToVisual(self, visual_name, thermal_name, dm_name, depth_scale):
 
         visual = cv2.imread(visual_name)
         thermal = cv2.imread(thermal_name)
@@ -66,7 +60,7 @@ class Matching():
 
         #  z_R * [u_R, v_R, 1, 1/z_R]^T = W * z_L * [u_L, v_L, 1, 1/z_L]^T
         #  Try using depth map
-        depth_img, dp_width, dp_height = img_glob.read_mvei_file(dm_name)
+        depth_img, dp_width, dp_height = img_glob.readMVEI(dm_name)
 
         depth_img = np.array(depth_img)
         depth_img = depth_img.reshape(dp_height, dp_width)
@@ -88,5 +82,49 @@ class Matching():
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
         merged = cv2.addWeighted(visual, 0.5, thermal_mapped, 0.5, 0)
-        cv2.imwrite(output_name, merged)
-        return visual_image_pos
+        return merged
+
+    def getScaleScore(self, visualName, thermalName, depthMapName, scale):
+        thermal = cv2.imread(thermalName)
+        visual = cv2.imread(visualName)
+        depthMap, dp_width, dp_height = img_glob.readMVEI(depthMapName)
+        depthMap = np.array(depthMap)
+        depthMap = depthMap.reshape(dp_height, dp_width)
+        minX = thermal.shape[1]
+        minY = thermal.shape[0]
+        maxX = 0
+        maxY = 0
+        (rows, cols) = visual.shape[:2]
+        for y in range(rows):
+            for x in range(cols):
+                if depthMap[y, x] == 0:
+                    continue
+                testPos = [x, y, 1, 1 / (depthMap[y, x] * scale)]
+                testPos = np.reshape(testPos, (4, 1))
+                res = self.W * testPos
+                res = res / res[2]
+
+                refX = int(res[0])
+                refY = int(res[1])
+                if refX >= 0 and refX < thermal.shape[1] and refY >= 0 and refY < thermal.shape[0]:
+                    minX = min(minX, x)
+                    minY = min(minY, y)
+                    maxX = max(maxX, x)
+                    maxY = max(maxY, y)
+
+        if minX >= 0 and minX < maxX and minY >= 0 and minY < maxY:
+            cropImg = visual[minY:maxY + 1, minX:maxX + 1]
+            compare = cv2.cvtColor(cropImg, cv2.COLOR_BGR2GRAY)
+            compare = cv2.Canny(cropImg, 50, 200)
+
+            template = cv2.resize(
+                thermal, (cropImg.shape[1], cropImg.shape[0]))
+            template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+            template = cv2.Canny(template, 50, 200)
+
+            result = cv2.matchTemplate(
+                compare, template, cv2.TM_CCOEFF)
+            (_, maxVal, _, _) = cv2.minMaxLoc(result)
+            return maxVal
+        else:
+            return 0

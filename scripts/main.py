@@ -5,14 +5,15 @@ import shutil
 import re
 import numpy as np
 import time
+import cv2
 
 mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 thermal_dir = "E:/recon-image/1-13/2/thermal"
 scale_factor = 2
 
-mve_entris = img_glob.get_mve_views_entries(mve_dir)
+mve_entris = img_glob.getMVEEntries(mve_dir)
 
-thermal_images_list = img_glob.search_files_by_time(thermal_dir, "*.jpg")
+thermal_images_list = img_glob.globFilesByTime(thermal_dir, "*.jpg")
 
 for idx, name in enumerate(thermal_images_list):
     for filename in os.listdir(mve_entris[idx]):
@@ -32,22 +33,28 @@ for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
         if re.search("depth-L" + str(scale_factor) + ".mvei", filename):
             dm_name = os.path.join(mve_view_dir, filename)
-            visual_name = os.path.join(mve_view_dir, "undist-L" + str(scale_factor) + ".png")
+            visual_name = os.path.join(
+                mve_view_dir, "undist-L" + str(scale_factor) + ".png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
-            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
+            res = matcher.mapThermalToVisual(
+                visual_name, thermal_name, dm_name, 104)
+            cv2.imwrite(output_name, res)
             break
 
 for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
         if re.search("smvs-B" + str(scale_factor) + ".mvei", filename):
             dm_name = os.path.join(mve_view_dir, filename)
-            visual_name = os.path.join(mve_view_dir, "undist-L" + str(scale_factor) + ".png")
+            visual_name = os.path.join(
+                mve_view_dir, "undist-L" + str(scale_factor) + ".png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
-            matcher.match_thermal_to_visual(visual_name, thermal_name, dm_name, output_name, 104)
+            res = matcher.mapThermalToVisual(
+                visual_name, thermal_name, dm_name, 104)
+            cv2.imwrite(output_name, res)
             break
 
 print("Matching took: ", time.time() - t0, "seconds.")
