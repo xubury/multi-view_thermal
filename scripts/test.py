@@ -17,20 +17,10 @@ thermal_name = os.path.join(base_dir, "thermal.jpg")
 dm_name = os.path.join(base_dir, "smvs-B2.mvei")
 output_name = "merged-test.jpg"
 
-maxScore = 0
-bestScale = 10
-scores = []
-scales = []
 
-for scale in range(10, 150, 5):
-    score = matcher.getScaleScore(visual_name, thermal_name, dm_name, scale)
-    if score > maxScore:
-        maxScore = score
-        bestScale = scale
-    scores.append(score)
-    scales.append(scale)
-    print("scale:", scale, "socre:", score,
-          "bestScale", bestScale, "maxScore", maxScore)
+scales = range(10, 50, 10)
+bestScale, maxScore, scores = matcher.guessScale(
+    visual_name, thermal_name, dm_name, scales)
 
 merged = matcher.mapThermalToVisual(
     visual_name, thermal_name, dm_name, bestScale)

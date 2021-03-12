@@ -128,3 +128,20 @@ class Matching():
             return maxVal
         else:
             return 0
+
+    def guessScale(self, visualName, thermalName, depthMapName, scales):
+        scores = []
+
+        maxScore = 0
+        bestScale = 10
+        for scale in scales:
+            score = self.getScaleScore(
+                visualName, thermalName, depthMapName, scale)
+            scores.append(score)
+            if score > maxScore:
+                maxScore = score
+                bestScale = scale
+                print("scale:", scale, "socre:", score,
+                      "bestScale", bestScale, "maxScore", maxScore)
+
+        return bestScale, maxScore, scores
