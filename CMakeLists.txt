@@ -5,9 +5,9 @@ include(ExternalProject)
 
 find_package(fmt REQUIRED)
 
-if("$ENV{MSYSTEM}" STREQUAL "MINGW64")
+# if("$ENV{MSYSTEM}" STREQUAL "MINGW64")
     set(MSYS true)
-endif()
+# endif()
 find_package(
     wxWidgets
     REQUIRED

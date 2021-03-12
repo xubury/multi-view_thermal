@@ -5,6 +5,8 @@ import img_glob
 import os
 
 # calculate the transform from L to R
+
+
 def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
     W = K_r * Rt_r * Rt_l.I * K_l.I
     return np.matrix(W)
@@ -13,10 +15,11 @@ def calculate_W_L_to_R(K_l, Rt_l, K_r, Rt_r):
 class Matching():
     calibrator = 0
     scale_factor = 0
-    W =  np.eye(4)
+    W = np.eye(4)
 
     def __init__(self, scale_factor, h_step, v_step):
-        self.calibrator = calibration.ThermalVisualCalibrator("../res/thermal-img", "../res/normal-img", (3, 9), h_step, v_step)
+        self.calibrator = calibration.ThermalVisualCalibrator(
+            "../res/thermal-img", "../res/normal-img", (3, 9), h_step, v_step)
         self.scale_factor = scale_factor
 
         if os.path.exists("calibration.txt"):
@@ -29,12 +32,12 @@ class Matching():
             print(self.W.shape)
             np.savetxt("calibration.txt", self.W)
 
-
     def calibrate(self):
         self.calibrator.StartCalibration()
-        calibration.undistort_image("../res/normal-img", self.calibrator.visual_images_list, self.calibrator.visual_K, self.calibrator.visual_dist)
-        calibration.undistort_image("../res/thermal-img", self.calibrator.thermal_images_list, self.calibrator.thermal_K, self.calibrator.thermal_dist)
-
+        calibration.undistort_image("../res/normal-img", self.calibrator.visual_images_list,
+                                    self.calibrator.visual_K, self.calibrator.visual_dist)
+        calibration.undistort_image("../res/thermal-img", self.calibrator.thermal_images_list,
+                                    self.calibrator.thermal_K, self.calibrator.thermal_dist)
 
         #  Note: In the 3d reconstruction, images are usually scaled
         #  Therefore, K matrix needs to be scaled too if scaled images are used
@@ -50,7 +53,8 @@ class Matching():
         print(self.calibrator.thermal_Rt[0])
         print(self.calibrator.visual_Rt[0])
 
-        self.W = calculate_W_L_to_R(K_homo, self.calibrator.visual_Rt[pose_id], self.calibrator.thermal_K_homo, self.calibrator.thermal_Rt[pose_id])
+        self.W = calculate_W_L_to_R(
+            K_homo, self.calibrator.visual_Rt[pose_id], self.calibrator.thermal_K_homo, self.calibrator.thermal_Rt[pose_id])
         print("W martix:")
         print(self.W)
 
@@ -69,17 +73,20 @@ class Matching():
         depth_img *= depth_scale
 
         visual_image_pos = np.zeros((4, width * height), np.float32)
-        visual_image_pos[0,:] = np.tile(np.arange(width),height)
-        visual_image_pos[1,:] = np.repeat(np.arange(height),width)
-        visual_image_pos[2,:] = 1
-        visual_image_pos[3,:] = 1 / depth_img.reshape(width * height)
+        visual_image_pos[0, :] = np.tile(np.arange(width), height)
+        visual_image_pos[1, :] = np.repeat(np.arange(height), width)
+        visual_image_pos[2, :] = 1
+        visual_image_pos[3, :] = 1 / depth_img.reshape(width * height)
         visual_pos_in_thermal = self.W * visual_image_pos
 
-        visual_pos_in_thermal = visual_pos_in_thermal / visual_pos_in_thermal[2]
+        visual_pos_in_thermal /= visual_pos_in_thermal[2]
 
-        x_map = visual_pos_in_thermal[0].reshape(height, width).astype(np.float32)
-        y_map = visual_pos_in_thermal[1].reshape(height, width).astype(np.float32)
+        x_map = visual_pos_in_thermal[0].reshape(
+            height, width).astype(np.float32)
+        y_map = visual_pos_in_thermal[1].reshape(
+            height, width).astype(np.float32)
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
-        merged = cv2.addWeighted(visual, 0, thermal_mapped, 1.0, 0)
+        merged = cv2.addWeighted(visual, 0.5, thermal_mapped, 0.5, 0)
         cv2.imwrite(output_name, merged)
+        return visual_image_pos
