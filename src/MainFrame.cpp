@@ -560,8 +560,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
     /* View selection */
     smvs::ViewSelection::Options view_select_opts;
-    uint32_t num_neighbors = views.size() / 6;
-    view_select_opts.num_neighbors = num_neighbors > 0 ? num_neighbors : 1;
+    view_select_opts.num_neighbors = 6;
     view_select_opts.embedding = UNDISTORTED_IMAGE_NAME;
     smvs::ViewSelection view_selection(view_select_opts, views, m_pScene->get_bundle());
     std::vector<mve::Scene::ViewList> view_neighbors(reconstruction_list.size());
@@ -648,14 +647,15 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     std::size_t started = 0;
     std::size_t finished = 0;
     util::WallTimer timer;
+    bool useShading = false;
 
     for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
         int const i = reconstruction_list[v];
         results.emplace_back(thread_pool.add_task(
             [v, i, &views, &counter_mutex, &input_name, &dm_name,
-                &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts,
+                &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts, &useShading,
                 this] {
-              smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, true, true);
+              smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, useShading);
               mve::Scene::ViewList neighbors = view_neighbors[v];
 
               std::vector<smvs::StereoView::Ptr> stereo_views;
@@ -665,17 +665,16 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
                         << ++started << "/" << reconstruction_list.size()
                         << " ID: " << i
                         << " Neighbors: ";
-              lock.unlock();
-
               for (std::size_t n = 0; n < view_select_opts.num_neighbors
                   && n < neighbors.size(); ++n)
                   std::cout << neighbors[n]->get_id() << " ";
               std::cout << std::endl;
+              lock.unlock();
 
               for (std::size_t n = 0; n < view_select_opts.num_neighbors
                   && n < neighbors.size(); ++n) {
                   smvs::StereoView::Ptr sv = smvs::StereoView::create(
-                      neighbors[n], input_name, true, true);
+                      neighbors[n], input_name);
                   stereo_views.push_back(sv);
               }
 
@@ -696,15 +695,11 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
               do_opts.min_scale = 2;
               do_opts.output_name = dm_name;
               do_opts.use_sgm = true;
-              do_opts.use_shading = true;
+              do_opts.use_shading = useShading;
 
-              try {
-                  smvs::DepthOptimizer optimizer(main_view, stereo_views,
-                                                 m_pScene->get_bundle(), do_opts);
-                  optimizer.optimize();
-              } catch (std::exception &e) {
-                  std::cout << e.what() << std::endl;
-              }
+              smvs::DepthOptimizer optimizer(main_view, stereo_views,
+                                                m_pScene->get_bundle(), do_opts);
+              optimizer.optimize();
 
               std::unique_lock<std::mutex> lock2(counter_mutex);
               std::cout << "\rFinished "

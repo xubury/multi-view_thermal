@@ -94,6 +94,7 @@ class Matching():
         minY = thermal.shape[0]
         maxX = 0
         maxY = 0
+        thermalDM = np.zeros(thermal.shape[:2])
         (rows, cols) = visual.shape[:2]
         for y in range(rows):
             for x in range(cols):
@@ -107,27 +108,46 @@ class Matching():
                 refX = int(res[0])
                 refY = int(res[1])
                 if refX >= 0 and refX < thermal.shape[1] and refY >= 0 and refY < thermal.shape[0]:
+                    # thermalDM[refY, refX] = depthMap[y, x]
                     minX = min(minX, x)
                     minY = min(minY, y)
                     maxX = max(maxX, x)
                     maxY = max(maxY, y)
 
-        if minX >= 0 and minX < maxX and minY >= 0 and minY < maxY:
-            cropImg = visual[minY:maxY + 1, minX:maxX + 1]
-            compare = cv2.cvtColor(cropImg, cv2.COLOR_BGR2GRAY)
-            compare = cv2.Canny(cropImg, 50, 200)
+        depthMap *= scale
 
-            template = cv2.resize(
-                thermal, (cropImg.shape[1], cropImg.shape[0]))
-            template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-            template = cv2.Canny(template, 50, 200)
+        visual_image_pos = np.zeros((4, cols * rows), np.float32)
+        visual_image_pos[0, :] = np.tile(np.arange(cols), rows)
+        visual_image_pos[1, :] = np.repeat(np.arange(rows), cols)
+        visual_image_pos[2, :] = 1
+        visual_image_pos[3, :] = 1 / depthMap.reshape(cols * rows)
+        visual_pos_in_thermal = self.W * visual_image_pos
 
-            result = cv2.matchTemplate(
-                compare, template, cv2.TM_CCOEFF)
-            (_, maxVal, _, _) = cv2.minMaxLoc(result)
-            return maxVal
-        else:
-            return 0
+        visual_pos_in_thermal /= visual_pos_in_thermal[2]
+
+        x_map = visual_pos_in_thermal[0].reshape(
+            rows, cols).astype(np.float32)
+        y_map = visual_pos_in_thermal[1].reshape(
+            rows, cols).astype(np.float32)
+
+        thermal_mapped = cv2.remap(depthMap, x_map, y_map, cv2.INTER_LINEAR)
+        # if minX >= 0 and minX < maxX and minY >= 0 and minY < maxY:
+        cropImg = depthMap[minY:maxY + 1, minX:maxX + 1]
+        thermalDM = thermal_mapped[minY:maxY + 1, minX:maxX + 1]
+        cv2.normalize(cropImg, dst=cropImg, alpha=0,
+                      beta=255, norm_type=cv2.NORM_MINMAX)
+        cv2.normalize(thermalDM, dst=thermalDM, alpha=0,
+                      beta=255, norm_type=cv2.NORM_MINMAX)
+        # thermalDM = cv2.resize(
+        #     thermalDM, (cropImg.shape[1], cropImg.shape[0]))
+        # cv2.imwrite("crop" + str(scale) + ".jpg", cropImg)
+        # cv2.imwrite("thermal" + str(scale) + ".jpg", thermalDM)
+        result = cv2.matchTemplate(
+            cropImg.astype(np.uint8), thermalDM.astype(np.uint8), cv2.TM_CCOEFF)
+        (_, maxVal, _, _) = cv2.minMaxLoc(result)
+        return maxVal
+        # else:
+        #     return 0
 
     def guessScale(self, visualName, thermalName, depthMapName, scales):
         scores = []

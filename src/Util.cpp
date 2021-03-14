@@ -264,7 +264,7 @@ void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle) {
     smvs::SGMStereo::Options sgm_opts;
-    sgm_opts.scale = 0;
+    sgm_opts.scale = 1;
 
     util::WallTimer sgm_timer;
     mve::FloatImage::Ptr d1 = smvs::SGMStereo::reconstruct(sgm_opts, main_view,
