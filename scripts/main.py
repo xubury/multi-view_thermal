@@ -7,8 +7,8 @@ import numpy as np
 import time
 import cv2
 
-mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
-thermal_dir = "E:/recon-image/1-13/2/thermal"
+mve_dir = "E:/recon-image/11-7/visual/4/scene/views"
+thermal_dir = "E:/recon-image/11-7/thermal/4"
 scale_factor = 2
 
 mve_entris = img_glob.getMVEEntries(mve_dir)
@@ -39,7 +39,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, 104)
+                visual_name, thermal_name, dm_name, 1274)
             cv2.imwrite(output_name, res)
             break
 
@@ -53,7 +53,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, 104)
+                visual_name, thermal_name, dm_name, 1000)
             cv2.imwrite(output_name, res)
             break
 

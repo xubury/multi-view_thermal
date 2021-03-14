@@ -5,6 +5,7 @@ import img_glob
 import os
 import utils
 import imutils
+import math
 
 
 class Matching():
@@ -81,7 +82,7 @@ class Matching():
             height, width).astype(np.float32)
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
-        merged = cv2.addWeighted(visual, 0.5, thermal_mapped, 0.5, 0)
+        merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
         return merged
 
     def getScaleScore(self, visualName, thermalName, depthMapName, scale):
@@ -90,6 +91,7 @@ class Matching():
         depthMap, dp_width, dp_height = img_glob.readMVEI(depthMapName)
         depthMap = np.array(depthMap)
         depthMap = depthMap.reshape(dp_height, dp_width)
+        depthMap *= scale
         minX = thermal.shape[1]
         minY = thermal.shape[0]
         maxX = 0
@@ -100,7 +102,7 @@ class Matching():
             for x in range(cols):
                 if depthMap[y, x] == 0:
                     continue
-                testPos = [x, y, 1, 1 / (depthMap[y, x] * scale)]
+                testPos = [x, y, 1, 1 / depthMap[y, x]]
                 testPos = np.reshape(testPos, (4, 1))
                 res = self.W * testPos
                 res = res / res[2]
@@ -108,13 +110,10 @@ class Matching():
                 refX = int(res[0])
                 refY = int(res[1])
                 if refX >= 0 and refX < thermal.shape[1] and refY >= 0 and refY < thermal.shape[0]:
-                    # thermalDM[refY, refX] = depthMap[y, x]
                     minX = min(minX, x)
                     minY = min(minY, y)
                     maxX = max(maxX, x)
                     maxY = max(maxY, y)
-
-        depthMap *= scale
 
         visual_image_pos = np.zeros((4, cols * rows), np.float32)
         visual_image_pos[0, :] = np.tile(np.arange(cols), rows)
@@ -130,38 +129,72 @@ class Matching():
         y_map = visual_pos_in_thermal[1].reshape(
             rows, cols).astype(np.float32)
 
-        thermal_mapped = cv2.remap(depthMap, x_map, y_map, cv2.INTER_LINEAR)
-        # if minX >= 0 and minX < maxX and minY >= 0 and minY < maxY:
-        cropImg = depthMap[minY:maxY + 1, minX:maxX + 1]
-        thermalDM = thermal_mapped[minY:maxY + 1, minX:maxX + 1]
-        cv2.normalize(cropImg, dst=cropImg, alpha=0,
-                      beta=255, norm_type=cv2.NORM_MINMAX)
-        cv2.normalize(thermalDM, dst=thermalDM, alpha=0,
-                      beta=255, norm_type=cv2.NORM_MINMAX)
-        # thermalDM = cv2.resize(
-        #     thermalDM, (cropImg.shape[1], cropImg.shape[0]))
-        # cv2.imwrite("crop" + str(scale) + ".jpg", cropImg)
-        # cv2.imwrite("thermal" + str(scale) + ".jpg", thermalDM)
-        result = cv2.matchTemplate(
-            cropImg.astype(np.uint8), thermalDM.astype(np.uint8), cv2.TM_CCOEFF)
-        (_, maxVal, _, _) = cv2.minMaxLoc(result)
-        return maxVal
-        # else:
-        #     return 0
+        depthMap /= scale
+        patch = (maxY - minY) * (maxX - minX)
+        if patch > 0:
+            cv2.normalize(depthMap, dst=depthMap, alpha=0,
+                          beta=10, norm_type=cv2.NORM_MINMAX)
+            thermal_mapped = cv2.remap(
+                depthMap, x_map, y_map, cv2.INTER_LINEAR)
+            cropDM = depthMap[minY:maxY + 1, minX:maxX + 1]
+            thermalDM = thermal_mapped[minY:maxY + 1, minX:maxX + 1]
+            # cv2.normalize(thermalDM, dst=thermalDM, alpha=0,
+            #               beta=255, norm_type=cv2.NORM_MINMAX)
+            cv2.imwrite("output/crop" + str(scale) +
+                        ".jpg", cropDM)
+            cv2.imwrite("output/thermal" + str(scale) + ".jpg",
+                        thermalDM)
+            maxD = int(thermalDM.max())
+            minD = int(thermalDM.min())
+            thermalH = 0
+            visualH = 0
+            for d in range(minD, maxD + 1):
+                p_i = 0
+                p_v = 0
+                for y in range(0, maxY - minY):
+                    for x in range(0, maxX - minX):
+                        if (int(thermalDM[y, x]) == d):
+                            p_i += 1
+                        if (int(cropDM[y, x]) == d):
+                            p_v += 1
+                if p_i == 0 or p_v == 0:
+                    continue
+                p_i /= patch
+                p_v /= patch
+                thermalH -= p_i * math.log(p_i)
+                visualH -= p_v * math.log(p_v)
+            thermalVisualH = 0
+            for i in range(minD, maxD + 1):
+                p_i = 0
+                for j in range(minD, maxD + 1):
+                    p_i_j = 0
+                    for y in range(0, maxY - minY):
+                        for x in range(0, maxX - minX):
+                            if (int(thermalDM[y, x]) == i and int(cropDM[y, x]) == j):
+                                p_i_j += 1
+                    p_i_j /= patch
+                    if p_i_j == 0:
+                        continue
+                    p_i += p_i_j * math.log(p_i_j)
+                thermalVisualH -= p_i
+            n = patch / (rows * cols)
+            return n * (thermalH + visualH - thermalVisualH)
+        else:
+            return 0
 
     def guessScale(self, visualName, thermalName, depthMapName, scales):
         scores = []
 
-        maxScore = 0
-        bestScale = 10
+        bestScore = 0
+        bestScale = scales[0]
         for scale in scales:
             score = self.getScaleScore(
                 visualName, thermalName, depthMapName, scale)
             scores.append(score)
-            if score > maxScore:
-                maxScore = score
+            if score > bestScore:
+                bestScore = score
                 bestScale = scale
-                print("scale:", scale, "socre:", score,
-                      "bestScale", bestScale, "maxScore", maxScore)
+            print("scale:", scale, "socre:", score,
+                  "bestScale", bestScale, "bestScore", bestScore)
 
-        return bestScale, maxScore, scores
+        return bestScale, bestScore, scores
