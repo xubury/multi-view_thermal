@@ -158,14 +158,14 @@ class Matching():
             for i in range(minD, maxD + 1):
                 if thermalP.get(i) != None:
                     pi = thermalP[i] / patch
-                    thermalH += pi * math.log(pi)
+                    thermalH -= pi * math.log(pi)
                 if visualP.get(i) != None:
                     pi = visualP[i] / patch
-                    visualH += pi * math.log(pi)
+                    visualH -= pi * math.log(pi)
                 for j in range(minD, maxD + 1):
                     if thermalP.get(i) != None and visualP.get(j) != None:
                         pij = min(thermalP[i], visualP[j]) / patch
-                        thermalVisualH += pij * math.log(pij)
+                        thermalVisualH -= pij * math.log(pij)
 
             n = patch / (rows * cols)
             return n * (thermalH + visualH - thermalVisualH)
