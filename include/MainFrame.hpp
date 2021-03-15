@@ -31,8 +31,9 @@ class MainFrame : public wxFrame {
         MENU_DISPLAY_FRUSTUM,
         MENU_DEPTH_RECON_MVS,
         MENU_DEPTH_RECON_SHADING,
-        MENU_DEPTH_RECON_MVS_THERMAL,
         MENU_DEPTH_RECON_SHADING_THERMAL,
+        MENU_MESH_RECON_MVS,
+        MENU_MESH_RECON_SHADING,
         MENU_FSS_RECON,
         MENU_GENERATE_DEPTH_IMG
     };
@@ -50,9 +51,7 @@ class MainFrame : public wxFrame {
 
     void OnMenuDepthReconMVS(wxCommandEvent &event);
 
-    void OnMenuThermalReconstruction(wxCommandEvent &event);
-
-    void OnMenuGenerateDepthImage(wxCommandEvent &event);
+    void OnMenuMeshReconstruction(wxCommandEvent &event);
 
     void OnMenuFSSR(wxCommandEvent &event);
 
@@ -76,7 +75,9 @@ class MainFrame : public wxFrame {
 
     /** The pointer to mvs construct result*/
     mve::TriangleMesh::Ptr m_point_set;
-    void GenerateJPEGFromMVEI(const std::string &img_name);
+
+    void reconsturctSMVS(const std::string &input_name,
+                         const std::string &dm_name, const std::string &sgmName);
 };
 
 #endif  //_MAIN_FRAME_HPP

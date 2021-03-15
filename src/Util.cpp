@@ -260,7 +260,7 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
     return point_set;
 }
 
-void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
+void ReconstructSGMDepthForView(const std::string &outputName, smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle) {
     smvs::SGMStereo::Options sgm_opts;
@@ -286,7 +286,7 @@ void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
     std::cout << "SGM took: " << sgm_timer.get_elapsed_sec()
               << "sec" << std::endl;
 
-    main_view->write_depth_to_view(d1, "smvs-sgm");
+    main_view->write_depth_to_view(d1, outputName);
 }
 
 } // namespace Util

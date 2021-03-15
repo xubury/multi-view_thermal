@@ -31,7 +31,7 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
                                     int scale,
                                     const std::string &output_name);
 
-void ReconstructSGMDepthForView(smvs::StereoView::Ptr main_view,
+void ReconstructSGMDepthForView(const std::string &outputName, smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle = nullptr);
 
