@@ -1,7 +1,6 @@
 import img_glob
 import matching
 import os
-import shutil
 import re
 import numpy as np
 import time
@@ -13,16 +12,7 @@ scale_factor = 2
 
 mve_entris = img_glob.getMVEEntries(mve_dir)
 
-thermal_images_list = img_glob.globFilesByTime(thermal_dir, "*.jpg")
-
-for idx, name in enumerate(thermal_images_list):
-    for filename in os.listdir(mve_entris[idx]):
-        if re.search("undist-L" + str(scale_factor) + ".png", filename):
-            dst_file_name = os.path.join(mve_entris[idx], "thermal.jpg")
-            shutil.copyfile(name, dst_file_name)
-            print("Copying " + name + " to " + dst_file_name)
-            break
-
+img_glob.copyThermalToDir(thermal_dir, mve_dir)
 
 # measure wall time
 t0 = time.time()
@@ -39,7 +29,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, 1274)
+                visual_name, thermal_name, dm_name, 130)
             cv2.imwrite(output_name, res)
             break
 
@@ -53,7 +43,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, 1000)
+                visual_name, thermal_name, dm_name, 130)
             cv2.imwrite(output_name, res)
             break
 

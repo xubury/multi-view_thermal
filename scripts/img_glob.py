@@ -1,6 +1,8 @@
 import glob
 import os
 import struct
+import shutil
+import re
 
 
 def getMVEEntries(search_path):
@@ -37,3 +39,16 @@ def readMVEI(path):
             return buf, header[0], header[1]
         else:
             print("Format unsupported yet!")
+
+
+def copyThermalToDir(thermal_dir, mve_dir):
+    mve_entris = getMVEEntries(mve_dir)
+    thermal_images_list = globFilesByTime(thermal_dir, "*.jpg")
+
+    for idx, name in enumerate(thermal_images_list):
+        for filename in os.listdir(mve_entris[idx]):
+            if re.search("original.jpg", filename):
+                dst_file_name = os.path.join(mve_entris[idx], "thermal.jpg")
+                shutil.copyfile(name, dst_file_name)
+                print("Copying " + name + " to " + dst_file_name)
+                break

@@ -12,7 +12,7 @@ scale_factor = 2
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
 matcher = matching.Matching(2**scale_factor, 50, 25)
 # base_dir = "E:\\recon-image\\1-13\\2\\visual\\scene\\views\\view_0022.mve"  # real value: 90
-base_dir = "E:\\recon-image\\11-7\\visual\\4\\scene\\views\\view_0001.mve"  # real value: 130
+base_dir = "E:\\recon-image\\11-7\\visual\\4\\scene\\views\\view_0000.mve"  # real value: 130
 visual_name = os.path.join(base_dir, "undist-L2.png")
 thermal_name = os.path.join(base_dir, "thermal.jpg")
 dm_name = os.path.join(base_dir, "smvs-visual-B2.mvei")
