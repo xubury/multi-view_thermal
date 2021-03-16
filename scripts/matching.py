@@ -141,12 +141,12 @@ class Matching():
             n = patch / (rows * cols)
             return n * Mi
         else:
-            return -float('inf')
+            return 0
 
     def guessScale(self, visualName, thermalName, depthMapName, sgmName, thermalDMName, scales):
         scores = []
 
-        bestScore = -float('inf')
+        bestScore = 0
         bestScale = scales[0]
         for scale in scales:
             score = self.getScaleScore(
