@@ -30,6 +30,7 @@ class MainFrame : public wxFrame {
         MENU_DO_SFM,
         MENU_DISPLAY_FRUSTUM,
         MENU_DEPTH_RECON_MVS,
+        MENU_DEPTH_RECON_MVS_THERMAL,
         MENU_DEPTH_RECON_SHADING,
         MENU_DEPTH_RECON_SHADING_THERMAL,
         MENU_MESH_RECON_MVS,

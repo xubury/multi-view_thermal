@@ -69,6 +69,8 @@ MainFrame::MainFrame(wxWindow *parent, wxWindowID id, const wxString &title, con
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDisplayFrustum, this, MENU::MENU_DISPLAY_FRUSTUM);
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS, _("Dense reconstruction(MVS)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconMVS, this, MENU::MENU_DEPTH_RECON_MVS);
+    pOperateMenu->Append(MENU::MENU_DEPTH_RECON_MVS_THERMAL, _("Thermal Dense reconstruction(MVS)"));
+    pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconMVS, this, MENU::MENU_DEPTH_RECON_MVS_THERMAL);
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING, _("Dense reconstruction(SMVS)"));
     pOperateMenu->Bind(wxEVT_MENU, &MainFrame::OnMenuDepthReconShading, this, MENU::MENU_DEPTH_RECON_SHADING);
     pOperateMenu->Append(MENU::MENU_DEPTH_RECON_SHADING_THERMAL, _("Thermal dense reconstruction(SMVS)"));
@@ -635,35 +637,9 @@ void MainFrame::reconsturctSMVS(const std::string &input_name,
         for (auto &neighbor : view_neighbors[v])
             check_embedding_list.insert(neighbor->get_id());
     }
-    std::vector<std::future<void>> resize_tasks;
-    for (auto const &i : check_embedding_list) {
-        mve::View::Ptr view = views[i];
-        if (view == nullptr
-            || !view->has_image(UNDISTORTED_IMAGE_NAME)
-            || view->has_image(input_name))
-            continue;
 
-        resize_tasks.emplace_back(thread_pool.add_task(
-            [view, &input_name, this] {
-              mve::ByteImage::ConstPtr input =
-                  view->get_byte_image(UNDISTORTED_IMAGE_NAME);
-              mve::ByteImage::Ptr scld = input->duplicate();
-              for (int i = 0; i < m_scale; ++i)
-                  scld = mve::image::rescale_half_size_gaussian<uint8_t>(scld);
-              view->set_image(scld, input_name);
-              view->save_view();
-            }));
-    }
+    Util::resizeViews(views, check_embedding_list, input_name, m_scale);
 
-    if (!resize_tasks.empty()) {
-        std::cout << "Resizing input images for "
-                  << resize_tasks.size() << " views... " << std::flush;
-        util::WallTimer timer;
-        for (auto &&task : resize_tasks)
-            task.get();
-        std::cout << " done, took " << timer.get_elapsed_sec()
-                  << "s." << std::endl;
-    }
     std::vector<std::future<void>> results;
     std::mutex counter_mutex;
     std::size_t started = 0;
@@ -952,43 +928,54 @@ void MainFrame::OnMenuFSSR(wxCommandEvent &event) {
 }
 
 void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
-    if (m_pScene == nullptr) {
+    if (m_pScene == nullptr || m_pScene->get_views().empty()) {
         event.Skip();
         return;
     }
 	std::string input_name;
-    if (m_scale != 0)
-        input_name = "undist-L" + std::to_string(m_scale);
-    else
-        input_name = "undistorted";
-    std::string dm_name = "depth-L"
-        + util::string::get(m_scale);
+    std::string dm_name;
+    if (event.GetId() == MENU_DEPTH_RECON_MVS) {
+        if (m_scale != 0)
+            input_name = "undist-L" + std::to_string(m_scale);
+        else
+            input_name = "undistorted";
+        dm_name = "depth-visual-L"
+            + util::string::get(m_scale);
+    } else if (event.GetId() == MENU_DEPTH_RECON_MVS_THERMAL) {
+        input_name = "thermal";
+        dm_name = "depth-thermal-L"
+            + util::string::get(m_scale);
+    }
     util::WallTimer timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
-    if (views.empty()) {
-        event.Skip();
-        return;
-    } else {
 #pragma omp parallel for schedule(dynamic, 1)
-        for (std::size_t id = 0; id < views.size(); ++id) {
-            if (views[id] == nullptr || !views[id]->is_camera_valid())
+    for (std::size_t id = 0; id < views.size(); ++id) {
+        if (views[id] == nullptr || !views[id]->is_camera_valid())
+            continue;
+
+        if (!views[id]->has_image(input_name)) {
+            if (!views[id]->has_image(UNDISTORTED_IMAGE_NAME)) {
                 continue;
-
-            /* Setup MVS. */
-            mvs::Settings settings;
-            settings.scale = m_scale;
-            settings.refViewNr = id;
-
-            if (views[id]->has_image(dm_name))
-                continue;
-
-            try {
-                mvs::DMRecon recon(m_pScene, settings);
-                recon.start();
+            } else if (m_scale != 0) {
+                Util::resizeView(views[id], input_name, m_scale);
             }
-            catch (std::exception &err) {
-                std::cerr << err.what() << std::endl;
-            }
+        }
+
+        /* Setup MVS. */
+        mvs::Settings settings;
+        settings.refViewNr = id;
+        settings.imageEmbedding = input_name;
+        settings.dmName = dm_name;
+
+        if (views[id]->has_image(dm_name))
+            continue;
+
+        try {
+            mvs::DMRecon recon(m_pScene, settings);
+            recon.start();
+        }
+        catch (std::exception &err) {
+            std::cerr << err.what() << std::endl;
         }
     }
     std::cout << "Reconstruction took "

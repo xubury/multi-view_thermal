@@ -5,6 +5,7 @@
 #include "mve/scene.h"
 #include "sgm_stereo.h"
 #include <glm/glm.hpp>
+#include <set>
 
 namespace Util {
 
@@ -34,6 +35,11 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
 void ReconstructSGMDepthForView(const std::string &outputName, smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle = nullptr);
+
+
+void resizeViews(mve::Scene::ViewList &views, const std::set<int> &list, const std::string &output_name, int scale);
+
+void resizeView(mve::View::Ptr view, const std::string &output_name, int scale);
 
 } // namespace Util
 

@@ -1,6 +1,7 @@
 #include <Image.hpp>
 #include "Util.hpp"
 #include <algorithm>
+#include "mve/image_tools.h"
 #include "util/file_system.h"
 #include "util/timer.h"
 #include "mve/mesh_info.h"
@@ -287,6 +288,43 @@ void ReconstructSGMDepthForView(const std::string &outputName, smvs::StereoView:
               << "sec" << std::endl;
 
     main_view->write_depth_to_view(d1, outputName);
+}
+
+void resizeViews(mve::Scene::ViewList &views, const std::set<int> &list, const std::string &output_name, int scale) {
+    std::vector<std::future<void>> resize_tasks;
+    ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
+    for (auto const &i : list) {
+        mve::View::Ptr view = views[i];
+        if (view == nullptr
+            || !view->has_image(UNDISTORTED_IMAGE_NAME)
+            || view->has_image(output_name))
+            continue;
+
+        resize_tasks.emplace_back(thread_pool.add_task(
+            [view, &output_name, &scale] {
+                resizeView(view, output_name, scale);
+            }));
+    }
+
+    if (!resize_tasks.empty()) {
+        std::cout << "Resizing input images for "
+                  << resize_tasks.size() << " views... " << std::flush;
+        util::WallTimer timer;
+        for (auto &&task : resize_tasks)
+            task.get();
+        std::cout << " done, took " << timer.get_elapsed_sec()
+                  << "s." << std::endl;
+    }
+}
+
+void resizeView(mve::View::Ptr view, const std::string &output_name, int scale) {
+    mve::ByteImage::ConstPtr input =
+        view->get_byte_image(UNDISTORTED_IMAGE_NAME);
+    mve::ByteImage::Ptr scld = input->duplicate();
+    for (int i = 0; i < scale; ++i)
+        scld = mve::image::rescale_half_size_gaussian<uint8_t>(scld);
+    view->set_image(scld, output_name);
+    view->save_view();
 }
 
 } // namespace Util
