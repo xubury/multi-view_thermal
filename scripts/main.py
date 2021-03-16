@@ -31,7 +31,7 @@ matcher = matching.Matching(2**scale_factor, 50, 25)
 
 for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
-        if re.search("depth-L" + str(scale_factor) + ".mvei", filename):
+        if re.search("depth-visual-L" + str(scale_factor) + ".mvei", filename):
             dm_name = os.path.join(mve_view_dir, filename)
             visual_name = os.path.join(
                 mve_view_dir, "undist-L" + str(scale_factor) + ".png")
@@ -45,7 +45,7 @@ for mve_view_dir in mve_entris:
 
 for mve_view_dir in mve_entris:
     for filename in os.listdir(mve_view_dir):
-        if re.search("smvs-B" + str(scale_factor) + ".mvei", filename):
+        if re.search("smvs-visual-B" + str(scale_factor) + ".mvei", filename):
             dm_name = os.path.join(mve_view_dir, filename)
             visual_name = os.path.join(
                 mve_view_dir, "undist-L" + str(scale_factor) + ".png")
