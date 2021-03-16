@@ -193,7 +193,7 @@ int get_scale_from_max_pixel(const mve::Scene::Ptr &scene) {
     if (view == nullptr)
         return 0;
 
-    mve::View::ImageProxy const *proxy = view->get_image_proxy(UNDISTORTED_IMAGE_NAME);
+    mve::View::ImageProxy const *proxy = view->get_image_proxy(ORIGINAL_IMAGE_NAME);
     if (proxy == nullptr)
         return 0;
 
