@@ -520,36 +520,35 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 
 		dm_name = "smvs-visual-B" + util::string::get(m_scale);
 		sgmName = "smvs-visual-SGM";
-		pointset_name = "smvs-point-set";
-		reconsturctSMVS(input_name, dm_name, sgmName);
-
-		m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, pointset_name, false);
-		// display cluster
-		mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
-		mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
-		std::vector<Vertex> vertices;
-		glm::mat4 transform(1.0f);
-		// inherit cluster's transform
-		if (m_pCluster != nullptr) {
-			transform = m_pCluster->GetTransform();
-			m_pGLPanel->ClearObject(m_pCluster);
-		}
-		for (std::size_t i = 0; i < v_pos.size(); ++i) {
-			// not sampling black area
-			if (v_color[i][0] < 1e-1 && v_color[i][1] < 1e-1 && v_color[i][2] < 1e-1) {
-				continue;
-			}
-			vertices.emplace_back();
-			vertices.back().Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
-			vertices.back().Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
-		}
-		m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
+		pointset_name = "smvs-visual-point-set";
 	} else if (event.GetId() == MENU_DEPTH_RECON_SHADING_THERMAL) {
 		input_name = "thermal";
 		dm_name = "smvs-thermal-B" + util::string::get(m_scale);
 		sgmName = "smvs-thermal-SGM";
-		reconsturctSMVS(input_name, dm_name, sgmName);
+		pointset_name = "smvs-thermal-point-set";
 	}
+    reconsturctSMVS(input_name, dm_name, sgmName);
+    m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, pointset_name, false);
+    // display cluster
+    mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
+    mve::TriangleMesh::ColorList &v_color(m_point_set->get_vertex_colors());
+    std::vector<Vertex> vertices;
+    glm::mat4 transform(1.0f);
+    // inherit cluster's transform
+    if (m_pCluster != nullptr) {
+        transform = m_pCluster->GetTransform();
+        m_pGLPanel->ClearObject(m_pCluster);
+    }
+    for (std::size_t i = 0; i < v_pos.size(); ++i) {
+        // not sampling black area
+        if (v_color[i][0] < 1e-1 && v_color[i][1] < 1e-1 && v_color[i][2] < 1e-1) {
+            continue;
+        }
+        vertices.emplace_back();
+        vertices.back().Position = glm::vec3(v_pos[i][0], v_pos[i][1], v_pos[i][2]);
+        vertices.back().Color = glm::vec3(v_color[i][0], v_color[i][1], v_color[i][2]);
+    }
+    m_pCluster = m_pGLPanel->AddCluster(vertices, transform);
     Refresh();
     event.Skip();
 }
@@ -733,7 +732,7 @@ void MainFrame::OnMenuMeshReconstruction(wxCommandEvent &event) {
     } else if (event.GetId() == MENU::MENU_MESH_RECON_SHADING) {
         input_name = "merged-smvs";
         output_name = "thermal-shading";
-        dm_name = "smvs-B" + util::string::get(m_scale);
+        dm_name = "smvs-visual-B" + util::string::get(m_scale);
         m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, output_name, false);
     }
 
@@ -934,6 +933,7 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
     }
 	std::string input_name;
     std::string dm_name;
+    std::string ply_name = "point-set.ply";
     if (event.GetId() == MENU_DEPTH_RECON_MVS) {
         if (m_scale != 0)
             input_name = "undist-L" + std::to_string(m_scale);
@@ -941,10 +941,12 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
             input_name = "undistorted";
         dm_name = "depth-visual-L"
             + util::string::get(m_scale);
+        ply_name = "point-set-visual.ply";
     } else if (event.GetId() == MENU_DEPTH_RECON_MVS_THERMAL) {
         input_name = "thermal";
         dm_name = "depth-thermal-L"
             + util::string::get(m_scale);
+        ply_name = "point-set-thermal.ply";
     }
     util::WallTimer timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
@@ -983,8 +985,7 @@ void MainFrame::OnMenuDepthReconMVS(wxCommandEvent &event) {
     std::cout << "Saving views back to disc..." << std::endl;
     m_pScene->save_views();
 
-    std::string ply_path = "point-set.ply";
-    m_point_set = Util::GenerateMesh(m_pScene, input_name, dm_name, m_scale, ply_path);
+    m_point_set = Util::GenerateMesh(m_pScene, input_name, dm_name, m_scale, ply_name);
 
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
