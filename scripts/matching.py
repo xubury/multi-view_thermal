@@ -66,6 +66,7 @@ class Matching():
 
         depth_img = np.array(depth_img)
         depth_img = depth_img.reshape(dp_height, dp_width)
+        depth_img = cv2.resize(depth_img, (visual.shape[1], visual.shape[0]))
         depth_img *= depth_scale
 
         visual_image_pos = np.zeros((4, width * height), np.float32)
@@ -92,6 +93,7 @@ class Matching():
         depthMap, dp_width, dp_height = img_glob.readMVEI(depthMapName)
         depthMap = np.array(depthMap)
         depthMap = depthMap.reshape(dp_height, dp_width)
+        depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
         depthMap *= scale
         (rows, cols) = visual.shape[:2]
 
@@ -125,16 +127,14 @@ class Matching():
             depthMap = depthMap.reshape(dp_height, dp_width)
             depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
             cropDM = depthMap[y:y+h, x:x+w]
-            # cv2.normalize(cropDM, dst=cropDM,
-            #               alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-            # cv2.normalize(thermalDM, dst=thermalDM,
-            #               alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-            # cropDM = 255 - cropDM
-            # thermalDM = 255 - thermalDM
-            # cv2.imwrite("output/crop" + str(scale) +
-            #             ".jpg", cropDM)
-            # cv2.imwrite("output/thermal" + str(scale) + ".jpg",
-            #             thermalDM)
+            cv2.normalize(cropDM, dst=cropDM,
+                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            cv2.normalize(thermalDM, dst=thermalDM,
+                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            cv2.imwrite("output/crop" + str(scale) +
+                        ".jpg", cropDM)
+            cv2.imwrite("output/thermal" + str(scale) + ".jpg",
+                        thermalDM)
             thermalDM = thermalDM.reshape(w * h)
             cropDM = cropDM.reshape(w * h)
             Mi = utils.calc_MI(thermalDM, cropDM)
