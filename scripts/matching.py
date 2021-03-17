@@ -108,13 +108,12 @@ class Matching():
             rows, cols).astype(np.float32)
         y_map = visual_pos_in_thermal[1].reshape(
             rows, cols).astype(np.float32)
-
-        thermal_mapped = cv2.remap(
-            thermal, x_map, y_map, cv2.INTER_LINEAR)
-        gray_img = cv2.cvtColor(thermal_mapped, cv2.COLOR_BGR2GRAY)
-        x, y, w, h = cv2.boundingRect(gray_img)
+        src = np.ones(
+            (thermal.shape[0], thermal.shape[1]), dtype=np.uint8) * 255
+        mapped = cv2.remap(
+            src, x_map, y_map, cv2.INTER_LINEAR)
+        x, y, w, h = cv2.boundingRect(mapped)
         patch = w * h
-
         if patch > 0:
             thermalDM, tdp_width, tdp_height = img_glob.readMVEI(thermalDMName)
             thermalDM = np.array(thermalDM)
@@ -126,10 +125,12 @@ class Matching():
             depthMap = depthMap.reshape(dp_height, dp_width)
             depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
             cropDM = depthMap[y:y+h, x:x+w]
-            cv2.normalize(cropDM, dst=cropDM,
-                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-            cv2.normalize(thermalDM, dst=thermalDM,
-                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            # cv2.normalize(cropDM, dst=cropDM,
+            #               alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            # cv2.normalize(thermalDM, dst=thermalDM,
+            #               alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+            # cropDM = 255 - cropDM
+            # thermalDM = 255 - thermalDM
             # cv2.imwrite("output/crop" + str(scale) +
             #             ".jpg", cropDM)
             # cv2.imwrite("output/thermal" + str(scale) + ".jpg",
