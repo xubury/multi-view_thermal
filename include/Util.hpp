@@ -39,7 +39,10 @@ void reconstructSGMDepthForView(const smvs::SGMStereo::Options &opt,
                                 mve::Bundle::ConstPtr bundle = nullptr);
 
 
-void resizeViews(mve::Scene::ViewList &views, const std::set<int> &list, const std::string &output_name, int scale);
+void resizeViews(mve::Scene::ViewList &views,
+                 const std::set<int> &list,
+                 const std::string &output_name,
+                 int scale);
 
 void resizeView(mve::View::Ptr view, const std::string &output_name, int scale);
 

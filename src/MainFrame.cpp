@@ -286,7 +286,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_ALL)) {
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_SIFT)) {
             event.Skip();
             return; // no feature match
         }
@@ -344,10 +344,8 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     /** Remove color data and pairwise matching to save memory*/
     for (auto &viewPort : viewPorts) {
         viewPort.features.colors.clear();
-        viewPort.features.colors.shrink_to_fit();
     }
     pairwise_matching.clear();
-    pairwise_matching.shrink_to_fit();
 
     /* Search for a good initial pair*/
     //TODO: add a option for user to specify init pair manually
@@ -513,12 +511,13 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 	std::string sgmName;
 	std::string pointset_name;
     smvs::SGMStereo::Options opt;
+    int scale = 0;
 	if (event.GetId() == MENU_DEPTH_RECON_SHADING) {
+        scale = m_scale;
 		if (m_scale != 0)
 			input_name = "undist-L" + util::string::get(m_scale);
 		else
 			input_name = UNDISTORTED_IMAGE_NAME;
-
 		dm_name = "smvs-visual-B" + util::string::get(m_scale);
 		sgmName = "smvs-visual-SGM";
 		pointset_name = "smvs-visual-point-set";
@@ -528,7 +527,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 		sgmName = "smvs-thermal-SGM";
 		pointset_name = "smvs-thermal-point-set";
 	}
-    reconsturctSMVS(opt, input_name, dm_name, sgmName);
+    reconsturctSMVS(opt, scale, input_name, dm_name, sgmName);
     m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, pointset_name, false);
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -555,6 +554,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 }
 
 void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
+                                int scale,
                                 const std::string &input_name,
 								const std::string &dm_name,
 								const std::string &sgmName) {
@@ -639,7 +639,7 @@ void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
             check_embedding_list.insert(neighbor->get_id());
     }
 
-    Util::resizeViews(views, check_embedding_list, input_name, m_scale);
+    Util::resizeViews(views, check_embedding_list, input_name, scale);
 
     std::vector<std::future<void>> results;
     std::mutex counter_mutex;

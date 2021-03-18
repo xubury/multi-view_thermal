@@ -289,7 +289,11 @@ void reconstructSGMDepthForView(const smvs::SGMStereo::Options &opt,
     main_view->write_depth_to_view(d1, outputName);
 }
 
-void resizeViews(mve::Scene::ViewList &views, const std::set<int> &list, const std::string &output_name, int scale) {
+void resizeViews(mve::Scene::ViewList &views,
+                 const std::set<int> &list,
+                 const std::string &output_name,
+                 int scale) {
+    if (scale == 0) return;
     std::vector<std::future<void>> resize_tasks;
     ThreadPool thread_pool(std::max<std::size_t>(std::thread::hardware_concurrency(), 1));
     for (auto const &i : list) {
