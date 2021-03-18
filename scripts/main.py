@@ -8,8 +8,8 @@ import cv2
 from sklearn import linear_model, datasets
 import matplotlib.pyplot as plt
 
-mve_dir = "E:/recon-image/11-7/visual/4/scene/views"
-thermal_dir = "E:/recon-image/11-7/thermal/4"
+mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
+thermal_dir = "E:/recon-image/11-7/4/thermal"
 # mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "E:/recon-image/1-13/2/thermal"
 scale_factor = 2
