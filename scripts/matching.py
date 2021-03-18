@@ -87,7 +87,7 @@ class Matching():
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
         return merged
 
-    def getScaleScore(self, visualName, thermalName, depthMapName, SGMVisualName, thermalDMName, scale):
+    def getScaleScore(self, visualName, thermalName, depthMapName, sgmName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)
         visual = cv2.imread(visualName)
         depthMap, dp_width, dp_height = img_glob.readMVEI(depthMapName)
@@ -101,7 +101,7 @@ class Matching():
         visual_image_pos[0, :] = np.tile(np.arange(cols), rows)
         visual_image_pos[1, :] = np.repeat(np.arange(rows), cols)
         visual_image_pos[2, :] = 1
-        visual_image_pos[3, :] = 1 / depthMap.reshape(cols * rows)
+        visual_image_pos[3, :] = 1 / depthMap.ravel()
         visual_pos_in_thermal = self.W * visual_image_pos
 
         visual_pos_in_thermal /= visual_pos_in_thermal[2]
@@ -110,23 +110,22 @@ class Matching():
             rows, cols).astype(np.float32)
         y_map = visual_pos_in_thermal[1].reshape(
             rows, cols).astype(np.float32)
-        src = np.ones(
-            (thermal.shape[0], thermal.shape[1]), dtype=np.uint8) * 255
+        thermalDM, tdp_width, tdp_height = img_glob.readMVEI(thermalDMName)
+        thermalDM = np.array(thermalDM)
+        thermalDM = thermalDM.reshape(tdp_height, tdp_width)
+        thermalDM = cv2.resize(thermalDM, (thermal.shape[1], thermal.shape[0]))
         mapped = cv2.remap(
-            src, x_map, y_map, cv2.INTER_LINEAR)
+            thermalDM.astype(np.uint8), x_map, y_map, cv2.INTER_LINEAR)
         x, y, w, h = cv2.boundingRect(mapped)
         patch = w * h
         if patch > 0:
-            thermalDM, tdp_width, tdp_height = img_glob.readMVEI(thermalDMName)
-            thermalDM = np.array(thermalDM)
-            thermalDM = thermalDM.reshape(tdp_height, tdp_width)
-            thermalDM = cv2.resize(thermalDM, (w, h))
-
-            depthMap, dp_width, dp_height = img_glob.readMVEI(SGMVisualName)
+            thermalDM = mapped[y:y+h, x:x+w]
+            depthMap, dp_width, dp_height = img_glob.readMVEI(sgmName)
             depthMap = np.array(depthMap)
             depthMap = depthMap.reshape(dp_height, dp_width)
             depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
             cropDM = depthMap[y:y+h, x:x+w]
+            Mi = utils.mutual_information_2d(thermalDM.ravel(), cropDM.ravel())
             cv2.normalize(cropDM, dst=cropDM,
                           alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
             cv2.normalize(thermalDM, dst=thermalDM,
@@ -135,9 +134,6 @@ class Matching():
                         ".jpg", cropDM)
             cv2.imwrite("output/thermal" + str(scale) + ".jpg",
                         thermalDM)
-            thermalDM = thermalDM.reshape(w * h)
-            cropDM = cropDM.reshape(w * h)
-            Mi = utils.calc_MI(thermalDM, cropDM)
 
             n = patch / (rows * cols)
             return n * Mi
