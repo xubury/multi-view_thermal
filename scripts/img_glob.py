@@ -3,6 +3,7 @@ import os
 import struct
 import shutil
 import re
+import numpy as np
 
 
 def getMVEEntries(search_path):
@@ -36,7 +37,10 @@ def readMVEI(path):
         n = header[0] * header[1] * header[2]
         if header[3] == 9:
             buf = struct.unpack('f' * n, file.read(n * 4))
-            return buf, header[0], header[1]
+            buf = np.array(buf)
+            # header[0] == width and header[1] == height
+            buf = buf.reshape(header[1], header[0])
+            return buf
         else:
             print("Format unsupported yet!")
 
