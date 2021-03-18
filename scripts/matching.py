@@ -116,7 +116,7 @@ class Matching():
             thermalDM = mapped[y:y+h, x:x+w]
             cropDM = depthMap[y:y+h, x:x+w]
 
-            Mi = utils.mutual_information_2d(thermalDM.ravel(), cropDM.ravel())
+            Mi = utils.mutualInformation2D(thermalDM.ravel(), cropDM.ravel())
             cv2.normalize(cropDM, dst=cropDM,
                           alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
             cv2.normalize(thermalDM, dst=thermalDM,
