@@ -15,9 +15,6 @@ thermal_dir = "E:/recon-image/11-7/3/thermal"
 scale_factor = 2
 
 mve_entris = img_glob.getMVEEntries(mve_dir)
-
-img_glob.copyThermalToDir(thermal_dir, mve_dir)
-
 # measure wall time
 t0 = time.time()
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
