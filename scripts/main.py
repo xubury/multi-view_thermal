@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
 thermal_dir = "E:/recon-image/11-7/3/thermal"
-# mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
+# mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
 # thermal_dir = "E:/recon-image/11-7/4/thermal"
 # mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "E:/recon-image/1-13/2/thermal"
