@@ -261,17 +261,16 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
     return point_set;
 }
 
-void ReconstructSGMDepthForView(const std::string &outputName, smvs::StereoView::Ptr main_view,
+void reconstructSGMDepthForView(const smvs::SGMStereo::Options &opt,
+                                const std::string &outputName,
+                                smvs::StereoView::Ptr main_view,
                                 std::vector<smvs::StereoView::Ptr> neighbors,
                                 mve::Bundle::ConstPtr bundle) {
-    smvs::SGMStereo::Options sgm_opts;
-    sgm_opts.scale = 1;
-
     util::WallTimer sgm_timer;
-    mve::FloatImage::Ptr d1 = smvs::SGMStereo::reconstruct(sgm_opts, main_view,
+    mve::FloatImage::Ptr d1 = smvs::SGMStereo::reconstruct(opt, main_view,
                                                            neighbors[0], bundle);
     if (neighbors.size() > 1) {
-        mve::FloatImage::Ptr d2 = smvs::SGMStereo::reconstruct(sgm_opts,
+        mve::FloatImage::Ptr d2 = smvs::SGMStereo::reconstruct(opt,
                                                                main_view, neighbors[1], bundle);
         for (int p = 0; p < d1->get_pixel_amount(); ++p) {
             if (d2->at(p) == 0.0f)

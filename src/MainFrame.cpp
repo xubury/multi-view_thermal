@@ -512,6 +512,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     std::string dm_name;
 	std::string sgmName;
 	std::string pointset_name;
+    smvs::SGMStereo::Options opt;
 	if (event.GetId() == MENU_DEPTH_RECON_SHADING) {
 		if (m_scale != 0)
 			input_name = "undist-L" + util::string::get(m_scale);
@@ -527,7 +528,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 		sgmName = "smvs-thermal-SGM";
 		pointset_name = "smvs-thermal-point-set";
 	}
-    reconsturctSMVS(input_name, dm_name, sgmName);
+    reconsturctSMVS(opt, input_name, dm_name, sgmName);
     m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, pointset_name, false);
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -553,7 +554,8 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     event.Skip();
 }
 
-void MainFrame::reconsturctSMVS(const std::string &input_name,
+void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
+                                const std::string &input_name,
 								const std::string &dm_name,
 								const std::string &sgmName) {
 	util::WallTimer total_timer;
@@ -649,7 +651,7 @@ void MainFrame::reconsturctSMVS(const std::string &input_name,
     for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
         int const i = reconstruction_list[v];
         results.emplace_back(thread_pool.add_task(
-            [v, i, &views, &counter_mutex, &input_name, &dm_name, &sgmName,
+            [v, i, &views, &counter_mutex, &opt, &input_name, &dm_name, &sgmName,
                 &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts, &useShading,
                 this] {
               smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, useShading);
@@ -684,7 +686,7 @@ void MainFrame::reconsturctSMVS(const std::string &input_name,
                       sgm_width
                   || views[i]->get_image_proxy(sgmName)->height !=
                       sgm_height)
-                  Util::ReconstructSGMDepthForView(sgmName, main_view, stereo_views, m_pScene->get_bundle());
+                  Util::reconstructSGMDepthForView(opt, sgmName, main_view, stereo_views, m_pScene->get_bundle());
 
               smvs::DepthOptimizer::Options do_opts;
               do_opts.regularization = 0.01;
