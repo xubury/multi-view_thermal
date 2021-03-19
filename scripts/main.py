@@ -18,7 +18,6 @@ real = 130
 
 # mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "E:/recon-image/1-13/2/thermal"
-
 # real = 90
 
 scale_factor = 2
@@ -80,7 +79,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, globalBestScale)
+                visual_name, thermal_name, dm_name, avgScale)
             cv2.imwrite(output_name, res)
             break
 
@@ -94,12 +93,13 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, globalBestScale)
+                visual_name, thermal_name, dm_name, avgScale)
             cv2.imwrite(output_name, res)
             break
 
 print("Matching took:", time.time() - t0, "seconds.")
-plt.axvline(x=real, color='r', linestyle='-')
+plt.axvline(x=real, color='g', linestyle='-')
+plt.axvline(x=avgScale, color='r', linestyle='-')
 plt.scatter(scales, scores, alpha=0.4)
 plt.xlabel("scale")
 plt.ylabel("score")
