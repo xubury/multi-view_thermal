@@ -7,17 +7,17 @@ import time
 import cv2
 import matplotlib.pyplot as plt
 
-# mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
-# thermal_dir = "E:/recon-image/11-7/3/thermal"
-# real = 120
+mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
+thermal_dir = "E:/recon-image/11-7/3/thermal"
+real = 120
 
-mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
-thermal_dir = "E:/recon-image/11-7/4/thermal"
-real = 130
+#  mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
+#  thermal_dir = "E:/recon-image/11-7/4/thermal"
+#  real = 130
 
-# mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
-# thermal_dir = "E:/recon-image/1-13/2/thermal"
-# real = 90
+#  mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
+#  thermal_dir = "E:/recon-image/1-13/2/thermal"
+#  real = 90
 
 scale_factor = 2
 
@@ -40,11 +40,10 @@ for mve_view_dir in mve_entris:
                 mve_view_dir, "undist-L" + str(scale_factor) + ".png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
-            sgm_name = os.path.join(mve_view_dir, "smvs-visual-sgm.mvei")
             thermal_dm_name = os.path.join(
                 mve_view_dir, "smvs-thermal-sgm.mvei")
             bestScale, bestScore, _ = matcher.guessScale(
-                visual_name, thermal_name, dm_name, sgm_name, thermal_dm_name, range(10, 300, 5))
+                visual_name, thermal_name, dm_name, thermal_dm_name, range(10, 300, 5))
             if globalBestScore < bestScore:
                 globalBestScore = bestScore
                 globalBestScale = bestScale

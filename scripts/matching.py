@@ -4,10 +4,6 @@ import calibration
 import img_glob
 import os
 import utils
-import imutils
-import math
-import matplotlib.pyplot as plt
-
 
 class Matching():
     calibrator = 0
@@ -84,7 +80,7 @@ class Matching():
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
         return merged
 
-    def getScaleScore(self, visualName, thermalName, depthMapName, sgmName, thermalDMName, scale):
+    def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)
         visual = cv2.imread(visualName)
         depthMap = img_glob.readMVEI(depthMapName)
@@ -131,14 +127,14 @@ class Matching():
         else:
             return 0
 
-    def guessScale(self, visualName, thermalName, depthMapName, sgmName, thermalDMName, scales):
+    def guessScale(self, visualName, thermalName, depthMapName, thermalDMName, scales):
         scores = []
 
         bestScore = 0
         bestScale = scales[0]
         for scale in scales:
             score = self.getScaleScore(
-                visualName, thermalName, depthMapName, sgmName, thermalDMName, scale)
+                visualName, thermalName, depthMapName, thermalDMName, scale)
             scores.append(score)
             if score > bestScore:
                 bestScore = score

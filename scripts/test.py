@@ -19,14 +19,13 @@ real = 90
 visual_name = os.path.join(base_dir, "undist-L2.png")
 thermal_name = os.path.join(base_dir, "thermal.jpg")
 dm_name = os.path.join(base_dir, "smvs-visual-B2.mvei")
-sgm_name = os.path.join(base_dir, "smvs-visual-sgm.mvei")
 thermal_dm_name = os.path.join(base_dir, "smvs-thermal-sgm.mvei")
 output_name = "merged-test.jpg"
 
 
 scales = range(10, 500, 5)
 bestScale, bestScore, scores = matcher.guessScale(
-    visual_name, thermal_name, dm_name, sgm_name, thermal_dm_name, scales)
+    visual_name, thermal_name, dm_name, thermal_dm_name, scales)
 
 merged = matcher.mapThermalToVisual(
     visual_name, thermal_name, dm_name, bestScale)
