@@ -5,7 +5,6 @@ import shutil
 import re
 import numpy as np
 
-
 def getMVEEntries(search_path):
     dir_entries = glob.glob(os.path.join(
         search_path, "view_[0-9]*.mve"), recursive=True)

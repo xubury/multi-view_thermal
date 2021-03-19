@@ -5,7 +5,6 @@ import re
 import numpy as np
 import time
 import cv2
-from sklearn import linear_model, datasets
 import matplotlib.pyplot as plt
 
 # mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
@@ -104,3 +103,4 @@ plt.scatter(scales, scores, alpha=0.4)
 plt.xlabel("scale")
 plt.ylabel("score")
 plt.show()
+

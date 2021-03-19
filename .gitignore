@@ -36,3 +36,5 @@
 # External libs
 elibs/mve
 elibs/smvs
+
+pyrightconfig.json
