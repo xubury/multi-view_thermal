@@ -77,6 +77,7 @@ class ThermalVisualCalibrator():
         images = img_glob.globFilesByName(path, "*.jpg")
         # Step through the list and search for chessboard corners
         output_path = os.path.join(path, "corners")
+        shape = None
         if not os.path.exists(output_path):
             os.mkdir(output_path)
         for idx, fname in enumerate(images):
