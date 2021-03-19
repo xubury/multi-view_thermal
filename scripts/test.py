@@ -1,6 +1,4 @@
-import imutils
 import os
-import img_glob
 import matching
 import cv2
 import matplotlib.pyplot as plt
@@ -34,10 +32,10 @@ merged = matcher.mapThermalToVisual(
     visual_name, thermal_name, dm_name, bestScale)
 cv2.imwrite(output_name, merged)
 
-from scipy.signal import savgol_filter
-scoresHat = savgol_filter(scores, 51, 3)
+#  from scipy.signal import savgol_filter
+#  scoresHat = savgol_filter(scores, 51, 3)
+#  plt.plot(scales, scoresHat, color='red')
 plt.plot(scales, scores, color='blue')
-plt.plot(scales, scoresHat, color='red')
 plt.xlabel("scale")
 plt.ylabel("score")
 plt.axvline(x=real, color='g', linestyle='-')
