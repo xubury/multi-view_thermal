@@ -17,3 +17,4 @@ Quickstart
 2. `cmake -G YOUR_COMPILE_GENERATOR -B BUILD_DIR`
 3. Run `multi_view` to perform reconstruction
 4. Run `scripts/main.py` for registeration and calibration
+
