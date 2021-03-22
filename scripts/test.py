@@ -7,8 +7,8 @@ scale_factor = 2
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
 matcher = matching.Matching(2**scale_factor, 50, 25)
 
-base_dir = "E:\\recon-image\\1-13\\2\\visual\\scene\\views\\view_0000.mve"  # real value: 90
-real = 90
+base_dir = "E:\\recon-image\\1-13\\2\\visual\\scene\\views\\view_0005.mve"  # real value: 90
+real = 95
 
 #  base_dir = "E:\\recon-image\\11-7\\3\\visual\\scene\\views\\view_0000.mve"  # real value: 120
 #  real = 120
@@ -20,8 +20,16 @@ visual_name = os.path.join(base_dir, "undist-L2.png")
 thermal_name = os.path.join(base_dir, "thermal.jpg")
 dm_name = os.path.join(base_dir, "smvs-visual-B2.mvei")
 thermal_dm_name = os.path.join(base_dir, "smvs-thermal-sgm.mvei")
-output_name = "merged-test.jpg"
+visual_dm_name = os.path.join(base_dir, "smvs-visual-sgm.mvei")
+output_name = "merged-test.tif"
 
+import img_glob
+depthMap = img_glob.readMVEI(thermal_dm_name)
+cv2.normalize(depthMap, dst=depthMap, alpha=20, beta=255, norm_type=cv2.NORM_MINMAX)
+cv2.imwrite("thermal-depth-map.tif", depthMap)
+depthMap = img_glob.readMVEI(dm_name)
+cv2.normalize(depthMap, dst=depthMap, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+cv2.imwrite("visual-depth-map.tif", depthMap)
 
 scales = range(10, 500, 5)
 bestScale, bestScore, scores = matcher.guessScale(
@@ -38,4 +46,6 @@ plt.plot(scales, scores, color='blue')
 plt.xlabel("scale")
 plt.ylabel("score")
 plt.axvline(x=real, color='g', linestyle='-')
+plt.axvline(x=bestScale, color='r', linestyle='-')
+plt.savefig("scale-estimation.eps", dpi=300)
 plt.show()

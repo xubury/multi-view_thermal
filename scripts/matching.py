@@ -108,6 +108,10 @@ class Matching():
             thermalDM.astype(np.uint8), x_map, y_map, cv2.INTER_LINEAR)
         x, y, w, h = cv2.boundingRect(mapped)
         patch = w * h
+        cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(visual, "scale="+str(scale), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0 , 255), 2)
+        cv2.imwrite("output/patch" + str(scale) +
+                    ".tif", visual)
         if patch > 0:
             thermalDM = mapped[y:y+h, x:x+w]
             cropDM = depthMap[y:y+h, x:x+w]
