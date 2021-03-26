@@ -6,14 +6,15 @@ import numpy as np
 import time
 import cv2
 import matplotlib.pyplot as plt
+import ransac
 
-mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
-thermal_dir = "E:/recon-image/11-7/3/thermal"
-real = 120
+#  mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
+#  thermal_dir = "E:/recon-image/11-7/3/thermal"
+#  real = 120
 
-#  mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
-#  thermal_dir = "E:/recon-image/11-7/4/thermal"
-#  real = 130
+mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
+thermal_dir = "E:/recon-image/11-7/4/thermal"
+real = 130
 
 #  mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 #  thermal_dir = "E:/recon-image/1-13/2/thermal"
@@ -65,6 +66,8 @@ print("average scale:", avgScale)
 print("glboal best scale:", globalBestScale,
       "global best score:", globalBestScore)
 
+ransac = ransac.Ransac(30, 10, 0.8)
+_, ransacScale = ransac.fit(scales, scores)
 t0 = time.time()
 # map the image using the scale
 for mve_view_dir in mve_entris:
@@ -77,7 +80,7 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, avgScale)
+                visual_name, thermal_name, dm_name, ransacScale)
             cv2.imwrite(output_name, res)
             break
 
@@ -91,15 +94,16 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
-                visual_name, thermal_name, dm_name, avgScale)
+                visual_name, thermal_name, dm_name, ransacScale)
             cv2.imwrite(output_name, res)
             break
 
 print("Matching took:", time.time() - t0, "seconds.")
-plt.axvline(x=real, color='g', linestyle='-')
-plt.axvline(x=avgScale, color='r', linestyle='-')
+plt.axvline(x=real, color='g', linestyle='-', label="Real value")
+plt.axvline(x=avgScale, color='r', linestyle='-', label="Average")
+plt.axvline(x=ransacScale, color='b', linestyle='-', label="RANSAC")
 plt.scatter(scales, scores, alpha=0.4)
-plt.xlabel("scale")
-plt.ylabel("score")
+plt.xlabel("Scale")
+plt.ylabel("Score")
+plt.legend()
 plt.show()
-
