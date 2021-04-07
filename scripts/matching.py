@@ -9,11 +9,13 @@ class Matching():
     calibrator = 0
     scale_factor = 0
     W = np.eye(4)
+    debug = False
 
-    def __init__(self, scale_factor, h_step, v_step):
+    def __init__(self, scale_factor, h_step, v_step, debug = False):
         self.calibrator = calibration.ThermalVisualCalibrator(
             "../res/thermal-img", "../res/normal-img", (3, 9), h_step, v_step)
         self.scale_factor = scale_factor
+        self.debug = debug
 
         if os.path.exists("calibration.txt"):
             print("calibration file loaded")
@@ -58,7 +60,7 @@ class Matching():
 
         #  z_R * [u_R, v_R, 1, 1/z_R]^T = W * z_L * [u_L, v_L, 1, 1/z_L]^T
         #  Try using depth map
-        depth_img = img_glob.readMVEI(dm_name)
+        depth_img = utils.readMVEI(dm_name)
         depth_img = cv2.resize(depth_img, (visual.shape[1], visual.shape[0]))
         depth_img *= depth_scale
 
@@ -83,7 +85,7 @@ class Matching():
     def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)
         visual = cv2.imread(visualName)
-        depthMap = img_glob.readMVEI(depthMapName)
+        depthMap = utils.readMVEI(depthMapName)
         depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
         depthMap *= scale
         (rows, cols) = visual.shape[:2]
@@ -102,29 +104,31 @@ class Matching():
             rows, cols).astype(np.float32)
         y_map = visual_pos_in_thermal[1].reshape(
             rows, cols).astype(np.float32)
-        thermalDM = img_glob.readMVEI(thermalDMName)
+        thermalDM = utils.readMVEI(thermalDMName)
         thermalDM = cv2.resize(thermalDM, (thermal.shape[1], thermal.shape[0]))
         mapped = cv2.remap(
             thermalDM.astype(np.uint8), x_map, y_map, cv2.INTER_LINEAR)
         x, y, w, h = cv2.boundingRect(mapped)
         patch = w * h
-        cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        cv2.putText(visual, "scale="+str(scale), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0 , 255), 2)
-        cv2.imwrite("output/patch" + str(scale) +
-                    ".tif", visual)
+        if self.debug:
+            cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(visual, "scale="+str(scale), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0 , 255), 2)
+            cv2.imwrite("output/patch" + str(scale) +
+                        ".tif", visual)
         if patch > 0:
             thermalDM = mapped[y:y+h, x:x+w]
             cropDM = depthMap[y:y+h, x:x+w]
 
             Mi = utils.mutualInformation2D(thermalDM.ravel(), cropDM.ravel())
-            cv2.normalize(cropDM, dst=cropDM,
-                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-            cv2.normalize(thermalDM, dst=thermalDM,
-                          alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
-            cv2.imwrite("output/crop" + str(scale) +
-                        ".jpg", cropDM)
-            cv2.imwrite("output/thermal" + str(scale) + ".jpg",
-                        thermalDM)
+            if self.debug:
+                cv2.normalize(cropDM, dst=cropDM,
+                              alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                cv2.normalize(thermalDM, dst=thermalDM,
+                              alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                cv2.imwrite("output/crop" + str(scale) +
+                            ".jpg", cropDM)
+                cv2.imwrite("output/thermal" + str(scale) + ".jpg",
+                            thermalDM)
 
             n = patch / (rows * cols)
             return n * Mi

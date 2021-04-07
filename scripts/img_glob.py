@@ -1,9 +1,9 @@
 import glob
 import os
-import struct
 import shutil
 import re
 import numpy as np
+import utils
 
 def getMVEEntries(search_path):
     dir_entries = glob.glob(os.path.join(
@@ -17,31 +17,11 @@ def globFilesByTime(path, regex, reverse=False):
                    key=lambda x: os.path.getmtime(x), reverse=reverse)
     return files
 
-
-def removeSuffix(s):
-    return s[:s.rfind(".")]
-
-
 def globFilesByName(path, regex, reverse=False):
     regex = os.path.join(path, regex)
     files = sorted(glob.glob(regex), key=lambda x: int(
-        removeSuffix(os.path.basename(x))), reverse=reverse)
+        utils.removeSuffix(os.path.basename(x))), reverse=reverse)
     return files
-
-
-def readMVEI(path):
-    with open(path, "rb") as file:
-        file.read(11)  # mvei signature
-        header = struct.unpack('i' * 4, file.read(4 * 4))
-        n = header[0] * header[1] * header[2]
-        if header[3] == 9:
-            buf = struct.unpack('f' * n, file.read(n * 4))
-            buf = np.array(buf)
-            # header[0] == width and header[1] == height
-            buf = buf.reshape(header[1], header[0])
-            return buf
-        else:
-            print("Format unsupported yet!")
 
 
 def copyThermalToDir(thermal_dir, mve_dir):

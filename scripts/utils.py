@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 from scipy import ndimage
-
+import struct
 
 def transformLeftToRight(K_l, Rt_l, K_r, Rt_r):
     W = K_r * Rt_r * Rt_l.I * K_l.I
@@ -13,6 +13,8 @@ def toHomogenousMatrix(K):
     K = np.hstack((K, [[0], [0], [0], [1]]))
     return np.matrix(K)
 
+def removeSuffix(s):
+    return s[:s.rfind(".")]
 
 def rtToMatrix(R, t, Rodrigues=True):
     if Rodrigues:
@@ -71,3 +73,17 @@ def mutualInformation2D(x, y, sigma=1, normalized=False):
               - np.sum(s2 * np.log(s2)))
 
     return mi
+
+def readMVEI(path):
+    with open(path, "rb") as file:
+        file.read(11)  # mvei signature
+        header = struct.unpack('i' * 4, file.read(4 * 4))
+        n = header[0] * header[1] * header[2]
+        if header[3] == 9:
+            buf = struct.unpack('f' * n, file.read(n * 4))
+            buf = np.array(buf)
+            # header[0] == width and header[1] == height
+            buf = buf.reshape(header[1], header[0])
+            return buf
+        else:
+            print("Format unsupported yet!")

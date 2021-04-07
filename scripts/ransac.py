@@ -29,9 +29,9 @@ def ransacPlot(n, x, y, m, c, final=False, xIn=(), yIn=(), points=()):
         plt.plot(x, m * x + c, 'r', label='line model', color=lineColor)
     if not final:
         plt.plot(xIn, yIn, marker='o', label='inliers',
-                 color=lineColor, linestyle='None', alpha=0.6)
+                 color=lineColor, linestyle='None', alpha=1.0)
         plt.plot(points[:, 0], points[:, 1], marker='o',
-                 label='Picked points', color='#0000cc', linestyle='None', alpha=0.6)
+                 label='Picked points', color='#ff0000', linestyle='None', alpha=1.0)
 
     plt.title(title)
     plt.legend()
@@ -56,16 +56,25 @@ def findLineModel(points):
     c = points[1, 1] - m * points[1, 0]
     return m, c
 
+def findBandModel(points):
+    sum = np.sum(points[:,1])
+    c = 0
+    for pt in points:
+        c += pt[1] / sum * pt[0]
+    return c
 
 class Ransac:
     iteration = 0
     threshold = 0
     ratio = 0
+    nPicked = 1
 
-    def __init__(self, iteration, threshold, ratio):
+    def __init__(self, iteration, threshold, ratio, picked, debug = False):
         self.iteration = iteration
         self.threshold = threshold
         self.ratio = ratio
+        self.nPicked = picked
+        self.debug = debug
 
     def fit(self, x, y):
         data = np.hstack((x, y))
@@ -74,7 +83,7 @@ class Ransac:
         modelC = 0.
 
         for it in range(self.iteration):
-            n = 1
+            n = self.nPicked
             nSample = x.shape[0]
             allIndices = np.arange(x.shape[0])
             np.random.shuffle(allIndices)
@@ -83,9 +92,9 @@ class Ransac:
             maybePts = data[indices1, :]
             testPts = data[indices2, :]
 
-            #  m, c = findLineModel(maybePts)
+            c = findBandModel(maybePts)
             m = float('inf')
-            c = maybePts[0, 0]
+            #  c = maybePts[0, 0]
 
             xList = []
             yList = []
@@ -116,14 +125,16 @@ class Ransac:
             print('model m', m)
             print('model c', c)
 
-            ransacPlot(it, x, y, m, c, False,
-                       xInliers, yInliers, maybePts)
+            if self.debug:
+                ransacPlot(it, testPts[:,0], testPts[:,1], m, c, False,
+                           xInliers, yInliers, maybePts)
             #  if maxRatio > self.ratio:
             #      print("Model is found")
             #      break
 
         # plot the final model
-        ransacPlot(0, x, y, modelM, modelC, True)
+        if self.debug:
+            ransacPlot(0, x, y, modelM, modelC, True)
 
         print('\nFinal model:\n')
         print('  ratio = ', maxRatio)
@@ -158,5 +169,5 @@ if __name__ == "__main__":
     yNoise[outlierIndices] = 30 *\
         (np.random.normal(size=(nOutliers, nInputs))**2)
 
-    ransac = Ransac(30, 1, 0.6)
+    ransac = Ransac(30, 1, 0.6, 2, True)
     ransac.fit(xNoise, yNoise)

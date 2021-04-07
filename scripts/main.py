@@ -8,16 +8,16 @@ import cv2
 import matplotlib.pyplot as plt
 import ransac
 
-#  mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
-#  thermal_dir = "E:/recon-image/11-7/3/thermal"
-#  real = 120
+mve_dir = "/mnt/e/recon-image/11-7/3/visual/scene/views"
+thermal_dir = "/mnt/e/recon-image/11-7/3/thermal"
+real = 120
 
-mve_dir = "E:/recon-image/11-7/4/visual/scene/views"
-thermal_dir = "E:/recon-image/11-7/4/thermal"
-real = 130
+#  mve_dir = "/mnt/e/recon-image/11-7/4/visual/scene/views"
+#  thermal_dir = "/mnt/e/recon-image/11-7/4/thermal"
+#  real = 130
 
-#  mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
-#  thermal_dir = "E:/recon-image/1-13/2/thermal"
+#  mve_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views"
+#  thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
 #  real = 90
 
 scale_factor = 2
@@ -42,7 +42,7 @@ for mve_view_dir in mve_entris:
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             thermal_dm_name = os.path.join(
-                mve_view_dir, "smvs-thermal-sgm.mvei")
+                mve_view_dir, "smvs-thermal-SGM.mvei")
             bestScale, bestScore, _ = matcher.guessScale(
                 visual_name, thermal_name, dm_name, thermal_dm_name, range(10, 300, 5))
             if globalBestScore < bestScore:
@@ -66,7 +66,7 @@ print("average scale:", avgScale)
 print("glboal best scale:", globalBestScale,
       "global best score:", globalBestScore)
 
-ransac = ransac.Ransac(30, 10, 0.8)
+ransac = ransac.Ransac(30, 10, 0.8, int(len(scales) / 5), True)
 _, ransacScale = ransac.fit(scales, scores)
 t0 = time.time()
 # map the image using the scale
