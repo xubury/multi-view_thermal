@@ -5,6 +5,11 @@ import img_glob
 import os
 import utils
 
+def cal_psnr(im1, im2):
+  mse = (np.abs(im1 - im2) ** 2).mean()
+  psnr = 10 * np.log10(255 * 255 / mse)
+  return psnr
+
 class Matching():
     calibrator = 0
     scale_factor = 0
@@ -120,6 +125,7 @@ class Matching():
             cropDM = depthMap[y:y+h, x:x+w]
 
             Mi = utils.mutualInformation2D(thermalDM.ravel(), cropDM.ravel())
+            psnr = cal_psnr(thermalDM, cropDM) / 100
             if self.debug:
                 cv2.normalize(cropDM, dst=cropDM,
                               alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
