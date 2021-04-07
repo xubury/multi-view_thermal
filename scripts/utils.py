@@ -83,7 +83,7 @@ def readMVEI(path):
             buf = struct.unpack('f' * n, file.read(n * 4))
             buf = np.array(buf)
             # header[0] == width and header[1] == height
-            buf = buf.reshape(header[1], header[0])
+            buf = buf.reshape((header[1], header[0], header[2]))
             return buf
         else:
             print("Format unsupported yet!")

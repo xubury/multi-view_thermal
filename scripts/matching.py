@@ -122,9 +122,9 @@ class Matching():
             Mi = utils.mutualInformation2D(thermalDM.ravel(), cropDM.ravel())
             if self.debug:
                 cv2.normalize(cropDM, dst=cropDM,
-                              alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                              alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
                 cv2.normalize(thermalDM, dst=thermalDM,
-                              alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+                              alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
                 cv2.imwrite("output/crop" + str(scale) +
                             ".jpg", cropDM)
                 cv2.imwrite("output/thermal" + str(scale) + ".jpg",
