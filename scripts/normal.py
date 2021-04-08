@@ -29,11 +29,6 @@ def depthToNormal(dm):
             normal[y, x] = n * 0.5 + 0.5
     return normal
 
-def cal_psnr(im1, im2):
-  mse = (np.abs(im1 - im2) ** 2).mean()
-  psnr = 10 * np.log10(255 * 255 / mse)
-  return psnr
-
 if __name__ == "__main__":
     mve_dir = "/mnt/e/recon-image/11-7/3/visual/scene/views"
     mve_entris = img_glob.getMVEEntries(mve_dir)

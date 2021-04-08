@@ -3,6 +3,11 @@ import cv2
 from scipy import ndimage
 import struct
 
+def calcPSNR(im1, im2):
+  mse = (np.abs(im1 - im2) ** 2).mean()
+  psnr = 10 * np.log10(255 * 255 / mse)
+  return psnr
+
 def transformLeftToRight(K_l, Rt_l, K_r, Rt_r):
     W = K_r * Rt_r * Rt_l.I * K_l.I
     return np.matrix(W)
