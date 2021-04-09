@@ -43,13 +43,22 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             thermal_dm_name = os.path.join(
                 mve_view_dir, "smvs-thermal-SGM.mvei")
-            bestScale, bestScore, _ = matcher.guessScale(
-                visual_name, thermal_name, dm_name, thermal_dm_name, range(10, 300, 5))
+            ran = range(10, 300, 5)
+            bestScale, bestScore, res = matcher.guessScale(
+                visual_name, thermal_name, dm_name, thermal_dm_name, ran)
             if globalBestScore < bestScore:
                 globalBestScore = bestScore
                 globalBestScale = bestScale
             scales.append(bestScale)
             scores.append(bestScore)
+            plt.figure()
+            plt.plot(ran, res, color='blue')
+            plt.xlabel("Scale")
+            plt.ylabel("Score")
+            plt.axvline(x=real, color='g', linestyle='-')
+            plt.axvline(x=bestScale, color='r', linestyle='-')
+            name = mve_view_dir[mve_view_dir.rfind("/"):]
+            plt.savefig("output" + name +".jpg", dpi=300)
             break
 
 # calculate average
@@ -66,7 +75,7 @@ print("average scale:", avgScale)
 print("glboal best scale:", globalBestScale,
       "global best score:", globalBestScore)
 
-ransac = ransac.Ransac(30, 10, 0.8, int(len(scales) / 5), True)
+ransac = ransac.Ransac(30, 10, 0.8, int(len(scales) / 5), False)
 _, ransacScale = ransac.fit(scales, scores)
 t0 = time.time()
 # map the image using the scale
@@ -99,11 +108,11 @@ for mve_view_dir in mve_entris:
             break
 
 print("Matching took:", time.time() - t0, "seconds.")
+plt.figure()
 plt.axvline(x=real, color='g', linestyle='-', label="Real value")
 plt.axvline(x=avgScale, color='r', linestyle='-', label="Average")
 plt.axvline(x=ransacScale, color='b', linestyle='-', label="RANSAC")
 plt.scatter(scales, scores, alpha=0.4)
 plt.xlabel("Scale")
 plt.ylabel("Score")
-plt.legend()
-plt.show()
+plt.savefig("output/final.jpg", dpi=300)

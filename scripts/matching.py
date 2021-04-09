@@ -110,25 +110,24 @@ class Matching():
             thermalDM.astype(np.uint8), x_map, y_map, cv2.INTER_LINEAR)
         x, y, w, h = cv2.boundingRect(mapped)
         patch = w * h
-        if self.debug:
-            cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(visual, "scale="+str(scale), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0 , 255), 2)
-            cv2.imwrite("output/patch" + str(scale) +
-                        ".tif", visual)
         if patch > 0:
             thermalDM = mapped[y:y+h, x:x+w]
             cropDM = depthMap[y:y+h, x:x+w]
 
-            Mi = utils.mutualInformation2D(thermalDM.ravel(), cropDM.ravel())
+            cv2.normalize(cropDM, dst=cropDM,
+                          alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
+            cv2.normalize(thermalDM, dst=thermalDM,
+                          alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
+            Mi = utils.mutualInformation2D(cropDM.ravel(), thermalDM.ravel())
             if self.debug:
-                cv2.normalize(cropDM, dst=cropDM,
-                              alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
-                cv2.normalize(thermalDM, dst=thermalDM,
-                              alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
                 cv2.imwrite("output/crop" + str(scale) +
                             ".jpg", cropDM)
                 cv2.imwrite("output/thermal" + str(scale) + ".jpg",
                             thermalDM)
+                cv2.rectangle(visual, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(visual, "scale="+str(scale), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0 , 255), 2)
+                cv2.imwrite("output/patch" + str(scale) +
+                            ".jpg", visual)
 
             n = patch / (rows * cols)
             return n * Mi
