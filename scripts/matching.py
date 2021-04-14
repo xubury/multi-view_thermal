@@ -4,6 +4,7 @@ import calibration
 import img_glob
 import os
 import utils
+from scipy.ndimage import gaussian_filter1d
 
 class Matching():
     calibrator = 0
@@ -134,7 +135,7 @@ class Matching():
         else:
             return 0
 
-    def guessScale(self, visualName, thermalName, depthMapName, thermalDMName, scales):
+    def guessScale(self, visualName, thermalName, depthMapName, thermalDMName, scales, sigma = 1):
         scores = []
 
         bestScore = 0
@@ -143,10 +144,11 @@ class Matching():
             score = self.getScaleScore(
                 visualName, thermalName, depthMapName, thermalDMName, scale)
             scores.append(score)
-            if score > bestScore:
-                bestScore = score
-                bestScale = scale
-            print("scale:", scale, "socre:", score,
-                  "bestScale", bestScale, "bestScore", bestScore)
 
+        scores = gaussian_filter1d(scores, sigma)
+        for id in range(len(scores)):
+            if scores[id] > bestScore:
+                bestScore = scores[id]
+                bestScale = scales[id]
+        print("best Scale:", bestScale, "Score:", bestScore)
         return bestScale, bestScore, scores
