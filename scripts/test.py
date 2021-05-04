@@ -9,11 +9,11 @@ scale_factor = 2
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
 matcher = matching.Matching(2**scale_factor, 50, 25, True)
 
-#  base_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views/view_0000.mve"  # real value: 90
-#  real = 95
+base_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views/view_0000.mve"  # real value: 90
+real = 95
 
-base_dir = "/mnt/e/recon-image/11-7/3/visual/scene/views/view_0002.mve"  # real value: 120
-real = 120
+#  base_dir = "/mnt/e/recon-image/11-7/3/visual/scene/views/view_0002.mve"  # real value: 120
+#  real = 120
 
 #  base_dir = "E:\\recon-image\\11-7\\4\\visual\\scene\\views\\view_0000.mve"  # real value: 130
 #  real = 130
@@ -31,7 +31,7 @@ depthMap = utils.readMVEI(dm_name)
 cv2.normalize(depthMap, dst=depthMap, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
 cv2.imwrite("visual-depth-map.tif", depthMap)
 
-scales = range(10, 500, 5)
+scales = range(30, 500, 5)
 bestScale, bestScore, scores = matcher.guessScale(
     visual_name, thermal_name, dm_name, thermal_dm_name, scales)
 
@@ -45,8 +45,9 @@ cv2.imwrite(output_name, merged)
 plt.plot(scales, scores, color='blue')
 plt.xlabel("scale")
 plt.ylabel("score")
-plt.axvline(x=real, color='g', linestyle='-', label = 'actual scale')
-plt.axvline(x=bestScale, color='r', linestyle='-', label='best estimation')
-plt.savefig("scale-estimation.jpg", dpi=300)
+plt.axvline(x=real, color='g', linestyle='-', label="ground truth")
+plt.axvline(x=bestScale, color='r', linestyle='-', label='estimation')
 plt.legend()
-plt.show()
+plt.grid()
+plt.savefig("scale-estimation.pdf", dpi=300, format='pdf')
+#  plt.show()

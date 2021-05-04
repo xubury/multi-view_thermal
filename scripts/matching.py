@@ -138,17 +138,17 @@ class Matching():
     def guessScale(self, visualName, thermalName, depthMapName, thermalDMName, scales, sigma = 1):
         scores = []
 
-        bestScore = 0
-        bestScale = scales[0]
         for scale in scales:
             score = self.getScaleScore(
                 visualName, thermalName, depthMapName, thermalDMName, scale)
             scores.append(score)
 
         scores = gaussian_filter1d(scores, sigma)
+        bestid = 0
         for id in range(len(scores)):
-            if scores[id] > bestScore:
-                bestScore = scores[id]
-                bestScale = scales[id]
-        print("best Scale:", bestScale, "Score:", bestScore)
-        return bestScale, bestScore, scores
+            if scores[id] > scores[bestid]:
+                bestid = id;
+        size = 1
+        start = max(bestid - int(size / 2), 0)
+        end = start + size
+        return  scales[start:end], scores[start:end], scores

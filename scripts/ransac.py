@@ -79,6 +79,7 @@ class Ransac:
     def fit(self, x, y):
         data = np.hstack((x, y))
         maxRatio = 0.
+        minDist = 0.
         modelM = 0.
         modelC = 0.
 
@@ -117,7 +118,9 @@ class Ransac:
 
             xInliers = np.array(xList)
             yInliers = np.array(yList)
-            if num / float(nSample) > maxRatio:
+            ratio = num / float(nSample)
+            if ratio > maxRatio or (ratio == maxRatio and totalDist < minDist):
+                minDist = totalDist
                 maxRatio = num / float(nSample)
                 modelM = m
                 modelC = c
