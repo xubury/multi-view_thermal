@@ -38,8 +38,9 @@ class Matching():
         print(self.calibrator.thermal_K_homo)
         print("visual K (homogeneous):")
         K_homo = self.calibrator.visual_K_homo.copy()
-        K_homo[0] /= self.calibrator.width / self.width
-        K_homo[1] /= self.calibrator.height / self.height
+        # resized image will effect intrinsic matrix
+        K_homo[0] *= self.width / self.calibrator.width 
+        K_homo[1] *= self.height / self.calibrator.height 
         print(K_homo)
 
         pose_id = 0
