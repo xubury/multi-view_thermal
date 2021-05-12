@@ -21,12 +21,15 @@ thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
 real = 90
 
 scale_factor = 2
+# the width and height of the visible image that used to reconstruct
+width = 613
+height = 513
 
 mve_entris = img_glob.getMVEEntries(mve_dir)
 # measure wall time
 t0 = time.time()
 # the grid I used has 50mm distance between neighboring points horizontally and 25mm vertically
-matcher = matching.Matching(2**scale_factor, 50, 25)
+matcher = matching.Matching(width, height, 50, 25)
 
 # estimate best scale
 scales = []
@@ -42,7 +45,7 @@ for mve_view_dir in mve_entris:
             thermal_dm_name = os.path.join(
                 mve_view_dir, "smvs-thermal-SGM.mvei")
             ran = range(10, 300, 5)
-            bestScale, bestScore, res = matcher.guessScale(
+            bestScale, bestScore, res = matcher.guessScale(10,
                 visual_name, thermal_name, dm_name, thermal_dm_name, ran)
             scales.append(bestScale)
             scores.append(bestScore)

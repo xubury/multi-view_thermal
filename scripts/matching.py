@@ -7,16 +7,14 @@ import utils
 from scipy.ndimage import gaussian_filter1d
 
 class Matching():
-    calibrator = 0
-    scale_factor = 0
     W = np.eye(4)
-    debug = False
 
-    def __init__(self, scale_factor, h_step, v_step, debug = False):
+    def __init__(self, width, height, h_step, v_step, debug = False):
         self.calibrator = calibration.ThermalVisualCalibrator(
             "../res/thermal-img", "../res/normal-img", (3, 9), h_step, v_step)
-        self.scale_factor = scale_factor
         self.debug = debug
+        self.width = width
+        self.height = height
 
         if os.path.exists("calibration.txt"):
             print("calibration file loaded")
@@ -40,8 +38,8 @@ class Matching():
         print(self.calibrator.thermal_K_homo)
         print("visual K (homogeneous):")
         K_homo = self.calibrator.visual_K_homo.copy()
-        K_homo[0] /= self.scale_factor
-        K_homo[1] /= self.scale_factor
+        K_homo[0] /= self.calibrator.width / self.width
+        K_homo[1] /= self.calibrator.height / self.height
         print(K_homo)
 
         pose_id = 0
@@ -81,7 +79,7 @@ class Matching():
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
-        return thermal_mapped
+        return merged
 
     def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)
@@ -135,7 +133,7 @@ class Matching():
         else:
             return 0
 
-    def guessScale(self, visualName, thermalName, depthMapName, thermalDMName, scales, sigma = 1):
+    def guessScale(self, patch, visualName, thermalName, depthMapName, thermalDMName, scales, sigma = 1):
         scores = []
 
         for scale in scales:
@@ -148,7 +146,6 @@ class Matching():
         for id in range(len(scores)):
             if scores[id] > scores[bestid]:
                 bestid = id;
-        size = 1
-        start = max(bestid - int(size / 2), 0)
-        end = start + size
+        start = max(bestid - int(patch / 2), 0)
+        end = start + patch
         return  scales[start:end], scores[start:end], scores

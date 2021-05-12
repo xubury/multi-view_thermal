@@ -138,6 +138,9 @@ class ThermalVisualCalibrator():
         print("Running visual images calibration...")
         self.visual_images_list, self.visual_world_pos, self.visual_img_pos, shape = self.getPoints(
             self.visual_path, self.calibration_pt_size, True)
+        img = cv2.imread(self.visual_images_list[0])
+        self.height = img.shape[0]
+        self.width = img.shape[1]
 
         _, self.visual_K, self.visual_dist, visual_rvecs, visual_tvecs = cv2.calibrateCamera(
             self.visual_world_pos, self.visual_img_pos, shape, None, None)
