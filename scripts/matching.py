@@ -81,7 +81,7 @@ class Matching():
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
-        return merged
+        return thermal_mapped
 
     def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)

@@ -96,7 +96,7 @@ for mve_view_dir in mve_entris:
 
 print("Matching took:", time.time() - t0, "seconds.")
 plt.figure()
-plt.axvline(x=real, color='g', linestyle='-', label="Real value")
+plt.axvline(x=real, color='g', linestyle='-', label="Ground Truth")
 plt.axvline(x=avgScale, color='r', linestyle='-', label="Average")
 plt.axvline(x=ransacScale, color='b', linestyle='-', label="RANSAC")
 plt.scatter(scales, scores, alpha=0.4)
