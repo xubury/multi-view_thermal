@@ -16,9 +16,15 @@ import ransac
 #  thermal_dir = "/mnt/e/recon-image/11-7/4/thermal"
 #  real = 130
 
-mve_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views"
-thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
+# mve_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views"
+# thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
+# real = 90
+
+mve_dir = "e:/recon-image/06-03/visual/scene/views"
+thermal_dir = "e:/recon-image/06-03/thermal"
 real = 90
+
+img_glob.copyThermalToDir(thermal_dir, mve_dir)
 
 scale_factor = 2
 # the width and height of the visible image that used to reconstruct

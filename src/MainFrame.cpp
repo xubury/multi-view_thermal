@@ -512,6 +512,7 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 	std::string pointset_name;
     smvs::SGMStereo::Options opt;
     int scale = 0;
+    bool noOptimize = false;
 	if (event.GetId() == MENU_DEPTH_RECON_SHADING) {
         scale = m_scale;
 		if (m_scale != 0)
@@ -526,8 +527,9 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
 		dm_name = "smvs-thermal-B" + util::string::get(m_scale);
 		sgmName = "smvs-thermal-SGM";
 		pointset_name = "smvs-thermal-point-set";
+        noOptimize = true;
 	}
-    reconsturctSMVS(opt, scale, input_name, dm_name, sgmName);
+    reconstructSMVS(opt, scale, noOptimize, input_name, dm_name, sgmName);
     m_point_set = Util::GenerateMeshSMVS(m_pScene, input_name, dm_name, pointset_name, false);
     // display cluster
     mve::TriangleMesh::VertexList &v_pos(m_point_set->get_vertices());
@@ -553,11 +555,12 @@ void MainFrame::OnMenuDepthReconShading(wxCommandEvent &event) {
     event.Skip();
 }
 
-void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
-                                int scale,
+void MainFrame::reconstructSMVS(const smvs::SGMStereo::Options &opt,
+                                int scale,bool noOptimize,
                                 const std::string &input_name,
 								const std::string &dm_name,
-								const std::string &sgmName) {
+								const std::string &sgmName
+                                ) {
 	util::WallTimer total_timer;
     mve::Scene::ViewList &views(m_pScene->get_views());
 
@@ -578,6 +581,12 @@ void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
             std::cout << "View ID " << i << " already reconstructed, "
                       << "skipping view." << std::endl;
             continue;
+        }
+        if (!views[i]->has_image(input_name)) {
+            std::cout << "View ID " << i << " missing input image, "
+                      << "skipping view." << std::endl;
+            continue;
+
         }
         reconstruction_list.push_back(i);
     }
@@ -653,7 +662,7 @@ void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
         results.emplace_back(thread_pool.add_task(
             [v, i, &views, &counter_mutex, &opt, &input_name, &dm_name, &sgmName,
                 &started, &finished, &reconstruction_list, &view_neighbors, &view_select_opts, &useShading,
-                this] {
+                &noOptimize, this] {
               smvs::StereoView::Ptr main_view = smvs::StereoView::create(views[i], input_name, useShading);
               mve::Scene::ViewList neighbors = view_neighbors[v];
 
@@ -679,14 +688,20 @@ void MainFrame::reconsturctSMVS(const smvs::SGMStereo::Options &opt,
 
               int sgm_width = views[i]->get_image_proxy(input_name)->width;
               int sgm_height = views[i]->get_image_proxy(input_name)->height;
+              std::unique_lock<std::mutex> tmplock(counter_mutex);
+              std::cout << input_name << ": ";
+              std::cout << sgm_width << " " << sgm_height << std::endl;
               sgm_width = (sgm_width + 1) / 2;
               sgm_height = (sgm_height + 1) / 2;
+              tmplock.unlock();
               if (!views[i]->has_image(sgmName)
                   || views[i]->get_image_proxy(sgmName)->width !=
                       sgm_width
                   || views[i]->get_image_proxy(sgmName)->height !=
                       sgm_height)
                   Util::reconstructSGMDepthForView(opt, sgmName, main_view, stereo_views, m_pScene->get_bundle());
+
+              if (noOptimize) return;
 
               smvs::DepthOptimizer::Options do_opts;
               do_opts.regularization = 0.01;

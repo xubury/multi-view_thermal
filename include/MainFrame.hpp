@@ -78,8 +78,8 @@ class MainFrame : public wxFrame {
     /** The pointer to mvs construct result*/
     mve::TriangleMesh::Ptr m_point_set;
 
-    void reconsturctSMVS(const smvs::SGMStereo::Options &opt,
-                         int scale,
+    void reconstructSMVS(const smvs::SGMStereo::Options &opt,
+                         int scale, bool noOptimize,
                          const std::string &input_name,
                          const std::string &dm_name,
                          const std::string &sgmName);
