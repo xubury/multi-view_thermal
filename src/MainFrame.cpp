@@ -582,7 +582,7 @@ void MainFrame::reconstructSMVS(const smvs::SGMStereo::Options &opt,
                       << "skipping view." << std::endl;
             continue;
         }
-        if (!views[i]->has_image(input_name)) {
+        if (!views[i]->has_image(input_name) && scale == 0) {
             std::cout << "View ID " << i << " missing input image, "
                       << "skipping view." << std::endl;
             continue;
@@ -688,12 +688,8 @@ void MainFrame::reconstructSMVS(const smvs::SGMStereo::Options &opt,
 
               int sgm_width = views[i]->get_image_proxy(input_name)->width;
               int sgm_height = views[i]->get_image_proxy(input_name)->height;
-              std::unique_lock<std::mutex> tmplock(counter_mutex);
-              std::cout << input_name << ": ";
-              std::cout << sgm_width << " " << sgm_height << std::endl;
               sgm_width = (sgm_width + 1) / 2;
               sgm_height = (sgm_height + 1) / 2;
-              tmplock.unlock();
               if (!views[i]->has_image(sgmName)
                   || views[i]->get_image_proxy(sgmName)->width !=
                       sgm_width

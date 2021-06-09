@@ -39,9 +39,9 @@ class Matching():
         print("visual K (homogeneous):")
         K_homo = self.calibrator.visual_K_homo.copy()
         # resized image will effect intrinsic matrix
-        K_homo[0, 0] *= self.width / self.calibrator.width 
+        K_homo[0, 0] *= self.width / self.calibrator.width
         K_homo[0, 2] *= self.width / self.calibrator.width
-        K_homo[1, 1] *= self.height / self.calibrator.height 
+        K_homo[1, 1] *= self.height / self.calibrator.height
         K_homo[1, 2] *= self.height / self.calibrator.height
         print(K_homo)
 
@@ -79,7 +79,7 @@ class Matching():
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
-        return merged
+        return thermal_mapped
 
     def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
         thermal = cv2.imread(thermalName)
