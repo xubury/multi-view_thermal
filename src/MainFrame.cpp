@@ -286,7 +286,7 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     if (!util::fs::file_exists(prebundle_path.c_str())) {
         std::cout << "Start feature matching." << std::endl;
         util::system::rand_seed(RAND_SEED_MATCHING);
-        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_SIFT)) {
+        if (!features_and_matching(m_pScene, &viewPorts, &pairwise_matching, sfm::FeatureSet::FEATURE_ALL)) {
             event.Skip();
             return; // no feature match
         }
@@ -351,8 +351,8 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
     //TODO: add a option for user to specify init pair manually
     sfm::bundler::InitialPair::Result init_pair_result;
     sfm::bundler::InitialPair::Options init_pair_opts;
-    //init_pair_opts.homography_opts.max_iterations = 1000;
-    //init_pair_opts.homography_opts.threshold = 0.005f;
+    // init_pair_opts.homography_opts.max_iterations = 1000;
+    // init_pair_opts.homography_opts.threshold = 0.005f;
     init_pair_opts.homography_opts.verbose_output = false;
     init_pair_opts.max_homography_inliers = 0.8f;
     init_pair_opts.verbose_output = true;
@@ -375,8 +375,8 @@ void MainFrame::OnMenuStructureFromMotion(wxCommandEvent &event) {
 
     /* Incrementally compute full bundle. */
     sfm::bundler::Incremental::Options incremental_opts;
-    //incremental_opts.pose_p3p_opts.max_iterations = 1000;
-    //incremental_opts.pose_p3p_opts.threshold = 0.005f;
+    // incremental_opts.pose_p3p_opts.max_iterations = 1000;
+    // incremental_opts.pose_p3p_opts.threshold = 0.005f;
     incremental_opts.pose_p3p_opts.verbose_output = false;
     incremental_opts.track_error_threshold_factor = 10.0f;
     incremental_opts.new_track_error_threshold = 0.01f;
@@ -655,7 +655,7 @@ void MainFrame::reconstructSMVS(const smvs::SGMStereo::Options &opt,
     std::size_t started = 0;
     std::size_t finished = 0;
     util::WallTimer timer;
-    bool useShading = false;
+    bool useShading = true;
 
     for (std::size_t v = 0; v < reconstruction_list.size(); ++v) {
         int const i = reconstruction_list[v];

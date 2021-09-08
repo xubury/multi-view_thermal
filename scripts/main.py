@@ -8,7 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 import ransac
 
-#  mve_dir = "/mnt/e/recon-image/11-7/3/visual/scene/views"
+# mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
 #  thermal_dir = "/mnt/e/recon-image/11-7/3/thermal"
 #  real = 120
 
@@ -16,15 +16,12 @@ import ransac
 #  thermal_dir = "/mnt/e/recon-image/11-7/4/thermal"
 #  real = 130
 
-# mve_dir = "/mnt/e/recon-image/1-13/2/visual/scene/views"
+mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
 # real = 90
 
-mve_dir = "e:/recon-image/06-03/visual/scene/views"
-thermal_dir = "e:/recon-image/06-03/thermal"
+# mve_dir = "E:/recon-image/2021-06-17/1/visible/scene/views"
 real = 90
-
-img_glob.copyThermalToDir(thermal_dir, mve_dir)
 
 scale_factor = 2
 # the width and height of the visible image that used to reconstruct
@@ -50,15 +47,16 @@ for mve_view_dir in mve_entris:
             output_name = os.path.join(mve_view_dir, "merged-smvs.jpg")
             thermal_dm_name = os.path.join(
                 mve_view_dir, "smvs-thermal-SGM.mvei")
-            ran = range(10, 300, 5)
-            bestScale, bestScore, res = matcher.guessScale(10,
-                visual_name, thermal_name, dm_name, thermal_dm_name, ran)
+            t0 = time.time()
+            bestScale, bestScore = matcher.guessScale(
+                visual_name, thermal_name, dm_name, thermal_dm_name)
             scales.append(bestScale)
             scores.append(bestScore)
+            print("best scale:", bestScale, "Search took", time.time() - t0, "seconds")
             break
 
-scales = [item for sublist in scales for item in sublist]
-scores = [item for sublist in scores for item in sublist]
+# scales = [item for sublist in scales for item in sublist]
+# scores = [item for sublist in scores for item in sublist]
 # calculate average
 scales = np.array(scales)
 scores = np.array(scores)
@@ -83,7 +81,6 @@ for mve_view_dir in mve_entris:
                 mve_view_dir, "undist-L" + str(scale_factor) + ".png")
             thermal_name = os.path.join(mve_view_dir, "thermal.jpg")
             output_name = os.path.join(mve_view_dir, "merged-mvs.jpg")
-            # 104 converts the depth value unit to mm(millimeter)
             res = matcher.mapThermalToVisual(
                 visual_name, thermal_name, dm_name, ransacScale)
             cv2.imwrite(output_name, res)

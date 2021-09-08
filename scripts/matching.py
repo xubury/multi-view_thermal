@@ -1,10 +1,13 @@
 import numpy as np
 import cv2
+from numpy.lib.function_base import gradient
 import calibration
 import img_glob
 import os
 import utils
 from scipy.ndimage import gaussian_filter1d
+from sko.PSO import PSO
+import re
 
 class Matching():
     W = np.eye(4)
@@ -79,12 +82,12 @@ class Matching():
 
         thermal_mapped = cv2.remap(thermal, x_map, y_map, cv2.INTER_LINEAR)
         merged = cv2.addWeighted(visual, 0.3, thermal_mapped, 0.7, 0)
-        return thermal_mapped
+        return merged
 
-    def getScaleScore(self, visualName, thermalName, depthMapName, thermalDMName, scale):
-        thermal = cv2.imread(thermalName)
-        visual = cv2.imread(visualName)
-        depthMap = utils.readMVEI(depthMapName)
+    def getScaleScore(self, scale):
+        thermal = cv2.imread(self.thermalName)
+        visual = cv2.imread(self.visualName)
+        depthMap = utils.readMVEI(self.depthMapName)
         depthMap = cv2.resize(depthMap, (visual.shape[1], visual.shape[0]))
         depthMap *= scale
         (rows, cols) = visual.shape[:2]
@@ -103,7 +106,7 @@ class Matching():
             rows, cols).astype(np.float32)
         y_map = visual_pos_in_thermal[1].reshape(
             rows, cols).astype(np.float32)
-        thermalDM = utils.readMVEI(thermalDMName)
+        thermalDM = utils.readMVEI(self.thermalDMName)
         thermalDM = cv2.resize(thermalDM, (thermal.shape[1], thermal.shape[0]))
         mapped = cv2.remap(
             thermalDM.astype(np.uint8), x_map, y_map, cv2.INTER_LINEAR)
@@ -117,7 +120,10 @@ class Matching():
                           alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
             cv2.normalize(thermalDM, dst=thermalDM,
                           alpha=255, beta=0, norm_type=cv2.NORM_MINMAX)
-            Mi = utils.mutualInformation2D(cropDM.ravel(), thermalDM.ravel())
+            try:
+                Mi = utils.mutualInformation2D(cropDM.ravel(), thermalDM.ravel())
+            except:
+                return 0
             if self.debug:
                 cv2.imwrite("output/crop" + str(scale) +
                             ".jpg", cropDM)
@@ -129,23 +135,16 @@ class Matching():
                             ".jpg", visual)
 
             n = patch / (rows * cols)
-            return n * Mi
+            return  -n * Mi
         else:
             return 0
 
-    def guessScale(self, patch, visualName, thermalName, depthMapName, thermalDMName, scales, sigma = 1):
-        scores = []
+    def guessScale(self, visualName, thermalName, depthMapName, thermalDMName):
+        self.visualName = visualName
+        self.thermalName = thermalName
+        self.depthMapName  = depthMapName
+        self.thermalDMName = thermalDMName
 
-        for scale in scales:
-            score = self.getScaleScore(
-                visualName, thermalName, depthMapName, thermalDMName, scale)
-            scores.append(score)
-
-        scores = gaussian_filter1d(scores, sigma)
-        bestid = 0
-        for id in range(len(scores)):
-            if scores[id] > scores[bestid]:
-                bestid = id;
-        start = max(bestid - int(patch / 2), 0)
-        end = start + patch
-        return  scales[start:end], scores[start:end], scores
+        pso = PSO(func=self.getScaleScore, dim=1, max_iter=30, lb=[1])
+        pso.run()
+        return  pso.gbest_x, -pso.gbest_y
