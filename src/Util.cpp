@@ -219,9 +219,9 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
             mve::TriangleMesh::ColorList const &mvcol(mesh->get_vertex_colors());
             mve::TriangleMesh::ConfidenceList &mconfs(mesh->get_vertex_confidences());
 
-            mesh->ensure_normals();
+            //mesh->ensure_normals();
 
-            mve::geom::depthmap_mesh_confidences(mesh, 3);
+            mve::geom::depthmap_mesh_confidences(mesh, 4);
 
             std::vector<float> mvscale;
             mvscale.resize(mverts.size(), 0.0f);
@@ -237,14 +237,10 @@ mve::TriangleMesh::Ptr GenerateMesh(mve::Scene::Ptr scene,
 #pragma omp critical
             {
                 verts.insert(verts.end(), mverts.begin(), mverts.end());
-                if (!mvcol.empty())
-                    vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
-                if (!mnorms.empty())
-                    vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
-                if (!mvscale.empty())
-                    vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
-                if (!mconfs.empty())
-                    vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
+                vcolor.insert(vcolor.end(), mvcol.begin(), mvcol.end());
+                vnorm.insert(vnorm.end(), mnorms.begin(), mnorms.end());
+                vvalues.insert(vvalues.end(), mvscale.begin(), mvscale.end());
+                vconfs.insert(vconfs.end(), mconfs.begin(), mconfs.end());
             }
             dm.reset();
             ci.reset();

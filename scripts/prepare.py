@@ -1,6 +1,6 @@
 import img_glob
-mve_dir = "E:/recon-image/11-7/3/visual/scene/views"
-thermal_dir = "E:/recon-image/11-7/3/thermal"
+mve_dir = "E:\\recon-image\\2021-06-17\\1\\visible\\scene\\views"
+thermal_dir = "E:\\recon-image\\2021-06-17\\1\\thermal-2"
 # mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "E:/recon-image/1-13/2/thermal"
 

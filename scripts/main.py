@@ -16,11 +16,11 @@ import ransac
 #  thermal_dir = "/mnt/e/recon-image/11-7/4/thermal"
 #  real = 130
 
-mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
+# mve_dir = "E:/recon-image/1-13/2/visual/scene/views"
 # thermal_dir = "/mnt/e/recon-image/1-13/2/thermal"
 # real = 90
 
-# mve_dir = "E:/recon-image/2021-06-17/1/visible/scene/views"
+mve_dir = "E:/recon-image/2021-06-17/1/visible/scene/views"
 real = 90
 
 scale_factor = 2
@@ -55,8 +55,6 @@ for mve_view_dir in mve_entris:
             print("best scale:", bestScale, "Search took", time.time() - t0, "seconds")
             break
 
-# scales = [item for sublist in scales for item in sublist]
-# scores = [item for sublist in scores for item in sublist]
 # calculate average
 scales = np.array(scales)
 scores = np.array(scores)

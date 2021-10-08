@@ -5,35 +5,35 @@ import matplotlib.pyplot as plt
 
 
 def ransacPlot(n, x, y, m, c, final=False, xIn=(), yIn=(), points=()):
-    outputName = "output/figure-" + str(n) + ".png"
+    outputName = "output/figure-" + str(n) + ".pdf"
     if final:
-        outputName = "output/final.png"
+        outputName = "output/final.pdf"
         title = 'Final'
     else:
         title = 'Iteration' + str(n)
     lineWidth = 1
     lineColor = '#0080ff'
 
-    plt.figure("Ransac", figsize=(15., 15.))
+    plt.figure(figsize=(8, 8))
+    plt.xlabel("Scale")
+    plt.ylabel("Score")
 
-    grid = [min(x) - 0.1 * min(x), max(x) + 0.1 * max(x),
-            min(y) - 0.2 * min(y), max(y) + 0.2 * min(y)]
+    grid = [-max(x) / 2.0, max(x), min(y) - 0.2 * min(y), max(y) + 0.2 * min(y)]
     plt.axis(grid)
 
     plt.scatter(x, y,  marker='o',
-                label='input points', color="#00cc00")
+                label='Scale Estimations', color="#00cc00")
     if m == float('inf'):
         #  plt.plot(c, c, 'r', label='line model', color=lineColor)
-        plt.axvline(x=c, label="line model", color=lineColor)
+        plt.axvline(x=c, label="RANSAC result", color=lineColor)
     else:
-        plt.plot(x, m * x + c, 'r', label='line model', color=lineColor)
+        plt.plot(x, m * x + c, 'r', label='RANSAC result', color=lineColor)
     if not final:
         plt.plot(xIn, yIn, marker='o', label='inliers',
                  color=lineColor, linestyle='None', alpha=1.0)
         plt.plot(points[:, 0], points[:, 1], marker='o',
                  label='Picked points', color='#ff0000', linestyle='None', alpha=1.0)
 
-    plt.title(title)
     plt.legend()
     plt.savefig(outputName)
     plt.close()
